@@ -16,11 +16,14 @@ import {
     Center
 } from '@chakra-ui/react'
 import { AiFillEye, AiFillEyeInvisible, AiTwotoneLock } from 'react-icons/ai'
+import { LOGIN } from '../../src/graphql/index'
+import { useMutation } from '@apollo/client'
 import validator from 'validator'
 
 export default function Home() {
     const [showPassword, setShowPassword] = useState(false)
     const { colorMode, toggleColorMode } = useColorMode()
+    const [login, { data }] = useMutation(LOGIN)
 
     function validateLogin(value) {
         let error
@@ -50,11 +53,14 @@ export default function Home() {
                 </Center>
                 <Formik
                     initialValues={{ login: '', password: '' }}
-                    onSubmit={(values, actions) => {
-                        setTimeout(() => {
-                            alert(JSON.stringify(values, null, 2))
+                    onSubmit={async (values, actions) => {
+                        try {
+                            const a = await login({variables: { email: values.login, password: values.password }})
+                        } catch (e) {
+                            console.error(e)
+                        } finally {
                             actions.setSubmitting(false)
-                        }, 1000)
+                        }
                     }}
                 >
                     {(props) => (
@@ -71,7 +77,7 @@ export default function Home() {
                             <Field name="password" validate={validatePassword}>
                                 {({ field, form }) => (
                                     <FormControl isInvalid={form.errors.password && form.touched.password} isRequired mb='15px'>
-                                        <FormLabel htmlFor="login">Senha</FormLabel>
+                                        <FormLabel htmlFor="password">Senha</FormLabel>
                                         <InputGroup>
                                             <InputLeftElement
                                                 pointerEvents="none"
@@ -101,7 +107,7 @@ export default function Home() {
                                         {/* <FormErrorMessage>{form.errors.password}</FormErrorMessage> */}
                                     </FormControl>
                                 )}
-                            </Field>
+                            </Field> 
 
                             <Text fontSize="small" casing="uppercase" mb='5px'>Esqueci minha senha?</Text>
 
@@ -123,4 +129,11 @@ export default function Home() {
             </Box>
         </Center>
     )
+}
+
+
+export async function getServerSideProps(context) {
+    return {
+      props: {}, // will be passed to the page component as props
+    }
 }

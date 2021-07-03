@@ -1,15 +1,19 @@
 import '../styles/globals.css'
-import { ChakraProvider } from "@chakra-ui/react"
+import { ChakraProvider } from '@chakra-ui/react'
 import { Provider } from 'react-redux'
 import { Store } from '../src/store'
-import { Chakra } from "../src/wrappers/chakra"
+import { Chakra } from '../src/wrappers/chakra'
+import apolloClient from '../lib/apolloClient'
+import { ApolloProvider } from '@apollo/client'
 
 function MyApp({ Component, pageProps }) {
   return (
     <Provider store={Store}>
-      <Chakra cookies={pageProps.cookies}>
-        <Component {...pageProps} />
-      </Chakra>
+      <ApolloProvider client={apolloClient}>
+        <Chakra cookies={pageProps.cookies}>
+          <Component {...pageProps} />
+        </Chakra>
+      </ApolloProvider>
     </Provider>
 
   )
