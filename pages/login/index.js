@@ -13,17 +13,23 @@ import {
     InputLeftElement,
     IconButton,
     useColorMode,
-    Center
+    Center,
+    useToast
 } from '@chakra-ui/react'
 import { AiFillEye, AiFillEyeInvisible, AiTwotoneLock } from 'react-icons/ai'
 import { LOGIN } from '../../src/graphql/index'
 import { useMutation } from '@apollo/client'
+import { useDispatch, useSelector } from 'react-redux'
+import { updateUser } from '../../src/actions'
 import validator from 'validator'
 
 export default function Home() {
     const [showPassword, setShowPassword] = useState(false)
     const { colorMode, toggleColorMode } = useColorMode()
+    const toast = useToast()
     const [login, { data }] = useMutation(LOGIN)
+    const dispatch = useDispatch()
+    const user = useSelector(state => state.User)
 
     function validateLogin(value) {
         let error
@@ -55,9 +61,29 @@ export default function Home() {
                     initialValues={{ login: '', password: '' }}
                     onSubmit={async (values, actions) => {
                         try {
-                            const a = await login({variables: { email: values.login, password: values.password }})
+                            const response = await login({ variables: { email: values.login, password: values.password } })
+
+                            localStorage.setItem('token', response.data.login.token)
+                            localStorage.setItem('dateToken', new Date())
+                            console.log(response)
+                            dispatch(updateUser(response.data.login.user))
+
+                            toast({
+                                title: "Sucesso.",
+                                description: "Você foi autenticado com sucesso.",
+                                status: "success",
+                                duration: 3000,
+                                isClosable: true,
+                            })
                         } catch (e) {
-                            console.error(e)
+                            console.log(e)
+                            toast({
+                                title: "Erro.",
+                                description: "As suas credenciais não foram encontradas.",
+                                status: "error",
+                                duration: 3000,
+                                isClosable: true,
+                            })
                         } finally {
                             actions.setSubmitting(false)
                         }
@@ -77,7 +103,7 @@ export default function Home() {
                             <Field name="password" validate={validatePassword}>
                                 {({ field, form }) => (
                                     <FormControl isInvalid={form.errors.password && form.touched.password} isRequired mb='15px'>
-                                        <FormLabel htmlFor="password">Senha</FormLabel>
+                                        <FormLabel htmlFor="password">{user.name}</FormLabel>
                                         <InputGroup>
                                             <InputLeftElement
                                                 pointerEvents="none"
@@ -107,7 +133,7 @@ export default function Home() {
                                         {/* <FormErrorMessage>{form.errors.password}</FormErrorMessage> */}
                                     </FormControl>
                                 )}
-                            </Field> 
+                            </Field>
 
                             <Text fontSize="small" casing="uppercase" mb='5px'>Esqueci minha senha?</Text>
 
@@ -129,11 +155,4 @@ export default function Home() {
             </Box>
         </Center>
     )
-}
-
-
-export async function getServerSideProps(context) {
-    return {
-      props: {}, // will be passed to the page component as props
-    }
 }
