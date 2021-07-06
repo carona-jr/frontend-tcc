@@ -19,17 +19,21 @@ import {
 import { AiFillEye, AiFillEyeInvisible, AiTwotoneLock } from 'react-icons/ai'
 import { LOGIN } from '../../src/graphql/index'
 import { useMutation } from '@apollo/client'
-import { useDispatch, useSelector } from 'react-redux'
+import { useDispatch } from 'react-redux'
 import { updateUser } from '../../src/actions'
 import validator from 'validator'
+import { useCookies } from "react-cookie"
+import cookie from 'cookie'
+import { useRouter } from 'next/router'
 
-export default function Home() {
+export default function SignIn() {
+    const [cookie, setCookie] = useCookies(["user"])
     const [showPassword, setShowPassword] = useState(false)
-    const { colorMode, toggleColorMode } = useColorMode()
+    const { colorMode } = useColorMode()
     const toast = useToast()
     const [login, { data }] = useMutation(LOGIN)
     const dispatch = useDispatch()
-    const user = useSelector(state => state.User)
+    const router = useRouter()
 
     function validateLogin(value) {
         let error
@@ -63,9 +67,12 @@ export default function Home() {
                         try {
                             const response = await login({ variables: { email: values.login, password: values.password } })
 
-                            localStorage.setItem('token', response.data.login.token)
-                            localStorage.setItem('dateToken', new Date())
-                            console.log(response)
+                            setCookie("token", response.data.login.token, {
+                                path: "/",
+                                maxAge: 604800, // Expires after 7 days
+                                sameSite: true,
+                            })
+
                             dispatch(updateUser(response.data.login.user))
 
                             toast({
@@ -75,8 +82,9 @@ export default function Home() {
                                 duration: 3000,
                                 isClosable: true,
                             })
+
+                            router.push('/home')
                         } catch (e) {
-                            console.log(e)
                             toast({
                                 title: "Erro.",
                                 description: "As suas credenciais não foram encontradas.",
@@ -103,7 +111,7 @@ export default function Home() {
                             <Field name="password" validate={validatePassword}>
                                 {({ field, form }) => (
                                     <FormControl isInvalid={form.errors.password && form.touched.password} isRequired mb='15px'>
-                                        <FormLabel htmlFor="password">{user.name}</FormLabel>
+                                        <FormLabel htmlFor="password">Senha</FormLabel>
                                         <InputGroup>
                                             <InputLeftElement
                                                 pointerEvents="none"
@@ -155,4 +163,20 @@ export default function Home() {
             </Box>
         </Center>
     )
+}
+
+export function getServerSideProps({ req }) {
+    const cookies = cookie.parse(req.headers.cookie || '')
+
+    if (cookies.token)
+        return {
+            redirect: {
+                destination: '/home',
+                permanent: false,
+            },
+        }
+
+    return {
+        props: {},
+    }
 }
