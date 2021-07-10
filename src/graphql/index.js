@@ -39,6 +39,78 @@ const LOGIN = gql`
     }
 `
 
+const ME = gql`
+    query me {
+        me {
+            name
+            email
+            type
+            document
+            address {
+                _id
+                street
+                number
+                zipcode
+                neighborhood
+                complement
+                type
+                createdAt
+                updatedAt
+                active
+            }
+            phone {
+                _id
+                phone
+                type
+                active
+                createdAt
+                updatedAt
+            }
+            supervised {
+                _id
+            }
+            active
+        }
+    }
+`
+
+const USER = gql`
+    query user($email: String!) {
+        user(email: $email){ 
+            name
+            email
+            type
+            document
+            address {
+                _id
+                street
+                number
+                zipcode
+                neighborhood
+                complement
+                type
+                createdAt
+                updatedAt
+                active
+            }
+            phone {
+                _id
+                phone
+                type
+                active
+                createdAt
+                updatedAt
+            }
+            supervised {
+                _id
+            }
+            active
+        }
+    }
+`
+
 export {
-    LOGIN
+    LOGIN,
+    USER,
+    ME
 }

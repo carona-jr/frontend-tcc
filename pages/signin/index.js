@@ -17,7 +17,7 @@ import {
     useToast
 } from '@chakra-ui/react'
 import { AiFillEye, AiFillEyeInvisible, AiTwotoneLock } from 'react-icons/ai'
-import { LOGIN } from '../../src/graphql/index'
+import { LOGIN } from '../../src/graphql'
 import { useMutation } from '@apollo/client'
 import { useDispatch } from 'react-redux'
 import { updateUser } from '../../src/actions'

@@ -1,17 +1,18 @@
-import { Center, useColorMode } from '@chakra-ui/react'
 import cookie from 'cookie'
+import dynamic from 'next/dynamic'
+const Layout = dynamic(() => import('../../src/layout'))
+import { getApolloClient } from '../../lib/apolloNextClient'
+import { ME } from '../../src/graphql'
 
-export default function Home() {
-    const { colorMode, toggleColorMode } = useColorMode()
-
+export default function Home({ user }) {
     return (
-        <Center h='100vh' bgColor={colorMode == 'light' ? 'gray.200' : 'gray.700'}>
-            Dashboard
-        </Center>
+        <Layout>
+            Dashboard - {user.name}
+        </Layout>
     )
 }
 
-export function getServerSideProps({ req }) {
+export async function getServerSideProps({ req }) {
     const cookies = cookie.parse(req.headers.cookie || '')
 
     if (!cookies.token)
@@ -19,10 +20,24 @@ export function getServerSideProps({ req }) {
             redirect: {
                 destination: '/signin',
                 permanent: false,
-            },
+            }
         }
 
-    return {
-        props: {},
+    try {
+        const apollo = getApolloClient({ token: cookies.token })
+        const response = await apollo.query({
+            query: ME,
+        })
+        const data = JSON.stringify(response.data.me)
+
+        return {
+            props: {
+                user: JSON.parse(data)
+            }
+        }
+    } catch (e) {
+        return {
+            notFound: true
+        }
     }
 }
