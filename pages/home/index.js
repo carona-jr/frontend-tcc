@@ -1,21 +1,24 @@
 import cookie from 'cookie'
 import dynamic from 'next/dynamic'
 const Layout = dynamic(() => import('../../src/layout'))
-import { getApolloClient } from '../../lib/apolloNextClient'
-import { ME } from '../../src/graphql'
+import { useSelector } from 'react-redux'
+import { useRouter } from 'next/router'
 
-export default function Home({ user }) {
+export default function Home({ token }) {
+    const user = useSelector(state => state.User)
+    const router = useRouter()
+
     return (
-        <Layout>
-            Dashboard - {user.name}
+        <Layout token={token} router={router}>
+            Dashboard - {user.email}
         </Layout>
     )
 }
 
-export async function getServerSideProps({ req }) {
+export function getServerSideProps({ req }) {
     const cookies = cookie.parse(req.headers.cookie || '')
 
-    if (!cookies.token)
+    if (!cookies.token || cookies.token == 'undefined')
         return {
             redirect: {
                 destination: '/signin',
@@ -23,21 +26,9 @@ export async function getServerSideProps({ req }) {
             }
         }
 
-    try {
-        const apollo = getApolloClient({ token: cookies.token })
-        const response = await apollo.query({
-            query: ME,
-        })
-        const data = JSON.stringify(response.data.me)
-
-        return {
-            props: {
-                user: JSON.parse(data)
-            }
-        }
-    } catch (e) {
-        return {
-            notFound: true
+    return {
+        props: {
+            token: cookies.token
         }
     }
 }

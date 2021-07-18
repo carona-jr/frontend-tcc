@@ -74,6 +74,7 @@ export default function SignIn() {
                             })
 
                             dispatch(updateUser(response.data.login.user))
+                            router.push('/home')
 
                             toast({
                                 title: "Sucesso.",
@@ -82,8 +83,6 @@ export default function SignIn() {
                                 duration: 3000,
                                 isClosable: true,
                             })
-
-                            router.push('/home')
                         } catch (e) {
                             toast({
                                 title: "Erro.",
@@ -168,7 +167,7 @@ export default function SignIn() {
 export function getServerSideProps({ req }) {
     const cookies = cookie.parse(req.headers.cookie || '')
 
-    if (cookies.token)
+    if (cookies.token && cookies.token != 'undefined')
         return {
             redirect: {
                 destination: '/home',
