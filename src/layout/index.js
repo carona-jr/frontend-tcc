@@ -1,4 +1,20 @@
-import { Flex, Box, Center, Text, UnorderedList, ListItem, Button, useColorMode, Spinner, Avatar, Menu, MenuList, MenuItem, MenuButton, MenuGroup } from '@chakra-ui/react'
+import {
+    Flex,
+    Box,
+    Center,
+    Text,
+    UnorderedList,
+    ListItem,
+    Button,
+    useColorMode,
+    Spinner,
+    Avatar,
+    Menu,
+    MenuList,
+    MenuItem,
+    MenuButton,
+    MenuGroup
+} from '@chakra-ui/react'
 import { GiStoneBlock } from 'react-icons/gi'
 import { BsFileText } from 'react-icons/bs'
 import { BiHomeAlt } from 'react-icons/bi'
@@ -42,7 +58,7 @@ export default function Layout({ children, token, router }) {
     const [cookie, removeCookie] = useCookies(["user"])
 
     function handleNavigate(page) {
-        if (page == '' || page == 'home')
+        if (page == '')
             return router.reload()
 
         return router.push(page)
@@ -84,7 +100,7 @@ export default function Layout({ children, token, router }) {
                                         w='100%'
                                         leftIcon={<BsFileText fontSize='16px' color='white' />}
                                         colorScheme="blackAlpha" variant="solid"
-                                        onClick={() => handleNavigate('')}
+                                        onClick={() => handleNavigate('contract')}
                                     >
                                         Contratos
                                     </Button>
