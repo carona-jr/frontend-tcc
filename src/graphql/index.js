@@ -42,6 +42,7 @@ const LOGIN = gql`
 const ME = gql`
     query me {
         me {
+            _id
             name
             email
             type
@@ -109,8 +110,49 @@ const USER = gql`
     }
 `
 
+const NEW_CONTRACT = gql`
+    mutation contract($contractInput: ContractInput!) {
+        createContract(contractInput: $contractInput) {
+            code
+            status
+            message
+            total
+            data {
+                title
+            }
+        }
+    }
+`
+
+const GET_ALL_CONTRACT = gql`
+    query contracts($offset: Int, $limit: Int) {
+        contracts(offset: $offset, limit: $limit){ 
+            code
+            status
+            message
+            total
+            data {
+                title
+                subtitle
+                ipfsHash
+                createdAt
+                status
+            }
+        }
+    }
+`
+
+const GET_CONTRACT_FILE = gql`
+    query contractFile($_id: ID!) {
+        contractFile(_id: $_id)
+    }
+`
+
 export {
     LOGIN,
     USER,
-    ME
+    ME,
+    NEW_CONTRACT,
+    GET_ALL_CONTRACT,
+    GET_CONTRACT_FILE
 }
