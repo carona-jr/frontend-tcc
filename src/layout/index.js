@@ -95,7 +95,7 @@ export default function Layout({ children, token, router }) {
                                         Dashboard
                                     </Button>
                                 </ListItem>
-                                <ListItem px={3} py={1} color='white'>
+                                {/* <ListItem px={3} py={1} color='white'>
                                     <Button
                                         w='100%'
                                         leftIcon={<BsFileText fontSize='16px' color='white' />}
@@ -104,7 +104,7 @@ export default function Layout({ children, token, router }) {
                                     >
                                         Contratos
                                     </Button>
-                                </ListItem>
+                                </ListItem> */}
                             </UnorderedList>
                         </Box>
                     </Box>

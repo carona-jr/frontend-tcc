@@ -10,6 +10,7 @@ const LOGIN = gql`
                 email
                 type
                 document
+                wallet
                 address {
                     _id
                     street
@@ -136,6 +137,7 @@ const GET_ALL_CONTRACT = gql`
                 title
                 subtitle
                 ipfsHash
+                ethHash
                 createdAt
                 status
             }
@@ -149,11 +151,18 @@ const GET_CONTRACT_FILE = gql`
     }
 `
 
+const SEND_CONTRACT = gql`
+    mutation contract($contractId: ID!) {
+        registerContract(contractId: $contractId)
+    }
+`
+
 export {
     LOGIN,
     USER,
     ME,
     NEW_CONTRACT,
     GET_ALL_CONTRACT,
-    GET_CONTRACT_FILE
+    GET_CONTRACT_FILE,
+    SEND_CONTRACT
 }

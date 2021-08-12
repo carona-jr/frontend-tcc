@@ -31,7 +31,7 @@ import { useRouter } from 'next/router'
 import { useEffect, useState, useRef } from 'react'
 import { Formik, Form, Field } from 'formik'
 import { useMutation, useApolloClient } from '@apollo/client'
-import { NEW_CONTRACT, GET_ALL_CONTRACT, GET_CONTRACT_FILE } from '../../src/graphql'
+import { NEW_CONTRACT, GET_ALL_CONTRACT, GET_CONTRACT_FILE, SEND_CONTRACT } from '../../src/graphql'
 import { FaRegPaperPlane } from 'react-icons/fa'
 import { IoIosDocument } from 'react-icons/io'
 import { HiDocumentDuplicate } from 'react-icons/hi'
@@ -44,6 +44,7 @@ export default function Home({ token }) {
     const user = useSelector(state => state.User)
     const router = useRouter()
     const [addContract, { data: contract }] = useMutation(NEW_CONTRACT)
+    const [sendContractMutation, { data: transaction }] = useMutation(SEND_CONTRACT)
     const [contracts, setContracts] = useState([])
     const [loadingContracts, setLoadingContracts] = useState(true)
     const [savingContract, setSaveContracts] = useState(false)
@@ -89,6 +90,31 @@ export default function Home({ token }) {
         }
     }
 
+    async function sendContract(contractId) {
+        try {
+            const response = await sendContractMutation({ variables: { contractId } })
+
+            if (response == 'ERROR')
+                throw new Error()
+
+            toast({
+                title: "Sucesso.",
+                description: "Contrato enviado com sucesso.",
+                status: "success",
+                duration: 3000,
+                isClosable: true,
+            })
+        } catch (e) {
+            toast({
+                title: "Erro.",
+                description: "Erro ao enviar o contrato.",
+                status: "error",
+                duration: 3000,
+                isClosable: true,
+            })
+        }
+    }
+
     function LoadContracts() {
         return (
             <SimpleGrid w='100%' p='6' columns={4} spacing={5}>
@@ -117,14 +143,24 @@ export default function Home({ token }) {
                                 <Text>
                                     {c.subtitle}
                                 </Text>
-                                <Flex direction='row-reverse'>
-                                    <Button p='0' m='0' variant='link' style={{ 'marginLeft': '12px' }}>
-                                        <FaRegPaperPlane fontSize='24' />
-                                    </Button>
-                                    <Button p='0' m='0' onClick={() => { showFile(c.id) }} variant='link'>
-                                        <IoIosDocument fontSize='28' />
-                                    </Button>
-                                </Flex>
+                                <Text>
+                                    {c.ethHash}
+                                </Text>
+                                {
+                                    c.status == "SENDED" ? (
+                                        <Flex direction='row-reverse'>
+                                            <Button p='0' m='0' onClick={() => { showFile(c.id) }} variant='link'>
+                                                <IoIosDocument fontSize='28' />
+                                            </Button>
+                                        </Flex>
+                                    ) : (
+                                        <Flex direction='row-reverse'>
+                                            <Button p='0' m='0' variant='link' onClick={() => { sendContract(c.id) }} style={{ 'marginLeft': '12px' }}>
+                                                <FaRegPaperPlane fontSize='24' />
+                                            </Button>
+                                        </Flex>
+                                    )
+                                }
                             </LinkBox>
                         )
                     })
@@ -138,10 +174,8 @@ export default function Home({ token }) {
     }, [])
 
     function handleSubmitContract() {
-        if (formRef.current) {
-            setSaveContracts(true)
+        if (formRef.current)
             formRef.current.handleSubmit()
-        }
     }
 
     function validateTitle(value) {
@@ -180,6 +214,7 @@ export default function Home({ token }) {
                             innerRef={formRef}
                             onSubmit={async (values, actions) => {
                                 try {
+                                    setSaveContracts(true)
                                     const contract = {
                                         ...values,
                                         ownerId: user._id,
@@ -198,7 +233,6 @@ export default function Home({ token }) {
                                         isClosable: true,
                                     })
                                 } catch (e) {
-                                    console.log(e)
                                     toast({
                                         title: "Erro.",
                                         description: "Erro ao criar o contrato.",
@@ -255,8 +289,8 @@ export default function Home({ token }) {
                 <Text m='6'>
                     <Text fontSize='14' fontWeight='semibold'>Sua carteira</Text>
                     <Flex alignItems='center'>
-                        <Text mr='5'>0x793cF3819832952E4E8651e4B0a02221F91e7FE2</Text>
-                        <CopyToClipboard text='0x793cF3819832952E4E8651e4B0a02221F91e7FE2'>
+                        <Text mr='5'>{user.wallet}</Text>
+                        <CopyToClipboard text={user.wallet}>
                             <Button>
                                 <HiDocumentDuplicate fontSize='24' />
                             </Button>
