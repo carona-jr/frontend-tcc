@@ -31,7 +31,11 @@ import { useRouter } from 'next/router'
 import { useEffect, useState, useRef } from 'react'
 import { Formik, Form, Field } from 'formik'
 import { useMutation, useApolloClient } from '@apollo/client'
-import { NEW_CONTRACT, GET_ALL_CONTRACT } from '../../src/graphql'
+import { NEW_CONTRACT, GET_ALL_CONTRACT, GET_CONTRACT_FILE } from '../../src/graphql'
+import { FaRegPaperPlane } from 'react-icons/fa'
+import { IoIosDocument } from 'react-icons/io'
+import { HiDocumentDuplicate } from 'react-icons/hi'
+import { CopyToClipboard } from 'react-copy-to-clipboard'
 
 export default function Home({ token }) {
     const { isOpen, onOpen, onClose } = useDisclosure()
@@ -56,6 +60,35 @@ export default function Home({ token }) {
         LoadContracts()
     }
 
+    async function showFile(contractId) {
+        try {
+            const response = await client.query({
+                query: GET_CONTRACT_FILE,
+                variables: {
+                    contractId
+                },
+                fetchPolicy: 'no-cache'
+            })
+
+            const newTab = window.open("", "_blank")
+            newTab.document.write(`
+                <html>
+                    <body style="margin:0!important">
+                        <embed width="100%" height="100%" src="data:application/pdf;base64,${response.data.contractFile}" type="application/pdf" />
+                    </body>
+                </html>
+            `)
+        } catch (e) {
+            toast({
+                title: "Erro",
+                description: "Erro ao visualizar o contrato.",
+                status: "error",
+                duration: 3000,
+                isClosable: true,
+            })
+        }
+    }
+
     function LoadContracts() {
         return (
             <SimpleGrid w='100%' p='6' columns={4} spacing={5}>
@@ -70,7 +103,7 @@ export default function Home({ token }) {
                                 borderColor='blackAlpha.100'
                                 rounded="md"
                                 backgroundColor='white'
-                                key={c._id}
+                                key={c.id}
                             >
                                 <Flex direction='row' justifyContent='space-between' as="tempo" dateTime="2021-01-15 15:30:00 +0000 UTC">
                                     <Text>{getDate(c.createdAt)}</Text>
@@ -84,6 +117,14 @@ export default function Home({ token }) {
                                 <Text>
                                     {c.subtitle}
                                 </Text>
+                                <Flex direction='row-reverse'>
+                                    <Button p='0' m='0' variant='link' style={{ 'marginLeft': '12px' }}>
+                                        <FaRegPaperPlane fontSize='24' />
+                                    </Button>
+                                    <Button p='0' m='0' onClick={() => { showFile(c.id) }} variant='link'>
+                                        <IoIosDocument fontSize='28' />
+                                    </Button>
+                                </Flex>
                             </LinkBox>
                         )
                     })
@@ -123,7 +164,6 @@ export default function Home({ token }) {
 
     function getDate(timestamp) {
         const date = new Date(parseInt(timestamp))
-
         return date.toLocaleString('pt-BR')
     }
 
@@ -146,7 +186,6 @@ export default function Home({ token }) {
                                         status: 'PENDING'
                                     }
                                     const response = await addContract({ variables: { contractInput: contract } })
-                                    console.log(response)
 
                                     if (response.data.createContract.code != 200)
                                         throw new Error()
@@ -208,9 +247,25 @@ export default function Home({ token }) {
                     </ModalFooter>
                 </ModalContent>
             </Modal>
-            <Button colorScheme="teal" variant="outline" p='6' m='6' onClick={onOpen}>
-                Criar
-            </Button>
+
+            <Flex w='100%' alignItems='center' justifyContent='space-between'>
+                <Button colorScheme="teal" variant="outline" p='6' m='6' onClick={onOpen}>
+                    Criar
+                </Button>
+                <Text m='6'>
+                    <Text fontSize='14' fontWeight='semibold'>Sua carteira</Text>
+                    <Flex alignItems='center'>
+                        <Text mr='5'>0x793cF3819832952E4E8651e4B0a02221F91e7FE2</Text>
+                        <CopyToClipboard text='0x793cF3819832952E4E8651e4B0a02221F91e7FE2'>
+                            <Button>
+                                <HiDocumentDuplicate fontSize='24' />
+                            </Button>
+                        </CopyToClipboard>
+                    </Flex>
+                </Text>
+            </Flex>
+
+
             {
                 loadingContracts ? (
                     <Center p='6'>loading</Center>

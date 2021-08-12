@@ -132,6 +132,7 @@ const GET_ALL_CONTRACT = gql`
             message
             total
             data {
+                id
                 title
                 subtitle
                 ipfsHash
@@ -143,8 +144,8 @@ const GET_ALL_CONTRACT = gql`
 `
 
 const GET_CONTRACT_FILE = gql`
-    query contractFile($_id: ID!) {
-        contractFile(_id: $_id)
+    query contractFile($contractId: ID!) {
+        contractFile(contractId: $contractId)
     }
 `
 
