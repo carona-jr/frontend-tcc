@@ -1,3 +1,51 @@
 {
-  "extends": ["next", "next/core-web-vitals"]
+  "extends": "next",
+  "env": {
+    "browser": true,
+    "es2021": true,
+    "node": true
+  },
+  "parserOptions": {
+    "ecmaFeatures": {
+      "jsx": true
+    },
+    "ecmaVersion": 12,
+    "sourceType": "module"
+  },
+  "plugins": [],
+  "rules": {
+    "react/prop-types": "off",
+    "comma-spacing": [
+      "Warn"
+    ],
+    "indent": [
+      "warn",
+      4,
+      {
+        "SwitchCase": 1
+      }
+    ],
+    "object-curly-spacing": [
+      "warn",
+      "always"
+    ],
+    "semi": [
+      "warn",
+      "never"
+    ],
+    "no-trailing-spaces": "warn",
+    "no-unused-vars": "warn",
+    "comma-dangle": "warn",
+    "no-duplicate-imports": "warn",
+    "key-spacing": "warn",
+    "camelcase": "warn",
+    "arrow-parens": [
+      "warn",
+      "as-needed"
+    ],
+    "eol-last": [
+      "warn",
+      "never"
+    ]
+  }
 }

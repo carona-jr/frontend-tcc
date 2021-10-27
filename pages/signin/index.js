@@ -6,7 +6,6 @@ import {
     FormControl,
     FormLabel,
     Input,
-    FormErrorMessage,
     Button,
     InputGroup,
     InputRightElement,
@@ -27,11 +26,11 @@ import cookie from 'cookie'
 import { useRouter } from 'next/router'
 
 export default function SignIn() {
-    const [cookie, setCookie] = useCookies(["user"])
+    const [setCookie] = useCookies(["user"])
     const [showPassword, setShowPassword] = useState(false)
     const { colorMode } = useColorMode()
     const toast = useToast()
-    const [login, { data }] = useMutation(LOGIN)
+    const [login] = useMutation(LOGIN)
     const dispatch = useDispatch()
     const router = useRouter()
 
@@ -70,7 +69,7 @@ export default function SignIn() {
                             setCookie("token", response.data.login.token, {
                                 path: "/",
                                 maxAge: 604800, // Expires after 7 days
-                                sameSite: true,
+                                sameSite: true
                             })
 
                             dispatch(updateUser(response.data.login.user))
@@ -81,7 +80,7 @@ export default function SignIn() {
                                 description: "Você foi autenticado com sucesso.",
                                 status: "success",
                                 duration: 3000,
-                                isClosable: true,
+                                isClosable: true
                             })
                         } catch (e) {
                             toast({
@@ -89,14 +88,14 @@ export default function SignIn() {
                                 description: "As suas credenciais não foram encontradas.",
                                 status: "error",
                                 duration: 3000,
-                                isClosable: true,
+                                isClosable: true
                             })
                         } finally {
                             actions.setSubmitting(false)
                         }
                     }}
                 >
-                    {(props) => (
+                    {props => (
                         <Form>
                             <Field name="login" validate={validateLogin}>
                                 {({ field, form }) => (
@@ -171,11 +170,11 @@ export function getServerSideProps({ req }) {
         return {
             redirect: {
                 destination: '/home',
-                permanent: false,
-            },
+                permanent: false
+            }
         }
 
     return {
-        props: {},
+        props: {}
     }
 }

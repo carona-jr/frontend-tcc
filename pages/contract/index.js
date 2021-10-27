@@ -1,17 +1,6 @@
-import {
-    LinkBox,
-    Box,
-    Heading,
-    LinkOverlay,
-    Text,
-    Badge,
-    SimpleGrid,
-    Flex
-} from '@chakra-ui/react'
 import cookie from 'cookie'
 import dynamic from 'next/dynamic'
 const Layout = dynamic(() => import('../../src/layout'))
-import { useSelector } from 'react-redux'
 import { useRouter } from 'next/router'
 
 export default function Home({ token }) {
@@ -31,7 +20,7 @@ export function getServerSideProps({ req }) {
         return {
             redirect: {
                 destination: '/signin',
-                permanent: false,
+                permanent: false
             }
         }
 

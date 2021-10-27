@@ -1,6 +1,6 @@
+/* eslint-disable no-unused-vars */
 import {
     LinkBox,
-    Box,
     Heading,
     LinkOverlay,
     Text,
@@ -85,7 +85,7 @@ export default function Home({ token }) {
                 description: "Erro ao visualizar o contrato.",
                 status: "error",
                 duration: 3000,
-                isClosable: true,
+                isClosable: true
             })
         }
     }
@@ -102,7 +102,7 @@ export default function Home({ token }) {
                 description: "Contrato enviado com sucesso.",
                 status: "success",
                 duration: 3000,
-                isClosable: true,
+                isClosable: true
             })
         } catch (e) {
             toast({
@@ -110,7 +110,7 @@ export default function Home({ token }) {
                 description: "Erro ao enviar o contrato.",
                 status: "error",
                 duration: 3000,
-                isClosable: true,
+                isClosable: true
             })
         }
     }
@@ -171,6 +171,7 @@ export default function Home({ token }) {
 
     useEffect(() => {
         getContracts()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     function handleSubmitContract() {
@@ -230,7 +231,7 @@ export default function Home({ token }) {
                                         description: "Contrato adicionado com sucesso.",
                                         status: "success",
                                         duration: 3000,
-                                        isClosable: true,
+                                        isClosable: true
                                     })
                                 } catch (e) {
                                     toast({
@@ -238,7 +239,7 @@ export default function Home({ token }) {
                                         description: "Erro ao criar o contrato.",
                                         status: "error",
                                         duration: 3000,
-                                        isClosable: true,
+                                        isClosable: true
                                     })
                                 } finally {
                                     setSaveContracts(false)
@@ -248,7 +249,7 @@ export default function Home({ token }) {
                                 }
                             }}
                         >
-                            {(props) => (
+                            {props => (
                                 <Form>
                                     <Field name="title" validate={validateTitle}>
                                         {({ field, form }) => (
@@ -318,7 +319,7 @@ export function getServerSideProps({ req }) {
         return {
             redirect: {
                 destination: '/signin',
-                permanent: false,
+                permanent: false
             }
         }
 

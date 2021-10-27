@@ -7,18 +7,18 @@ import { CookiesProvider } from "react-cookie"
 import apolloClient from '../lib/apolloClient'
 
 function MyApp({ Component, pageProps }) {
-  return (
-    <Provider store={Store}>
-      <CookiesProvider>
-        <ApolloProvider client={apolloClient}>
-          <Chakra cookies={pageProps.cookies}>
-            <Component {...pageProps} />
-          </Chakra>
-        </ApolloProvider>
-      </CookiesProvider>
-    </Provider>
+    return (
+        <Provider store={Store}>
+            <CookiesProvider>
+                <ApolloProvider client={apolloClient}>
+                    <Chakra cookies={pageProps.cookies}>
+                        <Component {...pageProps} />
+                    </Chakra>
+                </ApolloProvider>
+            </CookiesProvider>
+        </Provider>
 
-  )
+    )
 }
 
 export default MyApp
