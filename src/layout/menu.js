@@ -14,7 +14,7 @@ export default [
             {
                 icon: <RiFilePaper2Fill fontSize='32px' />,
                 description: 'Contratos',
-                navigate: '/flow/order'
+                navigate: '/contract'
             }
         ]
     }

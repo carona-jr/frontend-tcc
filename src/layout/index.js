@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import {
     Flex, Box, Center,
     Text, Button, useColorMode, Breadcrumb,
@@ -17,9 +18,8 @@ import { RiMenuLine } from 'react-icons/ri'
 import { getApolloClient } from '../../lib/apolloNextClient'
 import { ME } from '../../src/graphql'
 import useSWR from 'swr'
-import { useDispatch } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { updateUser } from '../../src/actions'
-import { useSelector } from 'react-redux'
 import { useCookies } from "react-cookie"
 import menu from './menu'
 
@@ -29,7 +29,7 @@ const fetcher = async url => {
             try {
                 const apollo = getApolloClient({ token: url.split('/')[2] })
                 const response = await apollo.query({
-                    query: ME,
+                    query: ME
                 })
                 res(response.data.me)
             } catch (e) {
@@ -59,7 +59,7 @@ export default function Layout({ children, token, router, title, breadcrumbs = [
     if (error) return 'ERRO'
 
     return (
-        <Box w='100vw' minH='100vh' bgColor={colorMode == 'light' ? 'gray.200' : 'gray.700'}>
+        <Box minH='100vh' bgColor={colorMode == 'light' ? 'gray.200' : 'gray.700'}>
             <Drawer placement='left' onClose={onMenuClose} isOpen={isMenuOpen}>
                 <DrawerOverlay />
                 <DrawerContent>
@@ -107,9 +107,9 @@ export default function Layout({ children, token, router, title, breadcrumbs = [
                 </DrawerContent>
             </Drawer>
 
-            <Flex w='100vw' flexDirection='column'>
+            <Flex flexDirection='column'>
                 <Box h={isLargerThan768 ? '10vh' : '9vh'} boxShadow='md' bgColor='white'>
-                    <Flex h='100%' justifyContent='space-between' mx='5'>
+                    <Flex h='100%' justifyContent='space-between' px='5'>
                         <Flex alignItems='center' w='100px' h='100%'>
                             <IconButton
                                 variant="ghost"
@@ -127,10 +127,6 @@ export default function Layout({ children, token, router, title, breadcrumbs = [
                                         {isLargerThan768 ? user.email : user.email.substring(0, user.email.indexOf('@'))}
                                     </MenuButton>
                                     <MenuList>
-                                        {/* <MenuGroup title='Dúvidas'>
-                                            <MenuItem>Suporte</MenuItem>
-                                            <MenuItem>FAQ</MenuItem>
-                                        </MenuGroup> */}
                                         <MenuGroup title='Perfil'>
                                             <MenuItem>Minha Conta</MenuItem>
                                             <MenuItem>Pagamentos</MenuItem>
@@ -145,9 +141,9 @@ export default function Layout({ children, token, router, title, breadcrumbs = [
                         </Box>
                     </Flex>
                 </Box>
-                <Box p='5'>
-                    <Box bgColor='#fff' p='5' borderRadius='12px' w='100%'>
-                        <Flex w='100%' mb='4' alignItems='center' justifyContent='space-between'>
+                <Box p="5">
+                    <Box bgColor='#fff' p='5' borderRadius='12px'>
+                        <Flex mb='4' alignItems='center' justifyContent='space-between'>
                             <Text fontSize={['16px', '16px', '24px']} fontWeight='small'>
                                 {title}
                             </Text>
