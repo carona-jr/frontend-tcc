@@ -142,8 +142,8 @@ export default function Layout({ children, token, router, title, breadcrumbs = [
                     </Flex>
                 </Box>
                 <Box p="5">
-                    <Box bgColor='#fff' p='5' borderRadius='12px'>
-                        <Flex mb='4' alignItems='center' justifyContent='space-between'>
+                    <Box bgColor='#fff' p='4' borderRadius='12px'>
+                        <Flex mb='2' alignItems='center' justifyContent='space-between'>
                             <Text fontSize={['16px', '16px', '24px']} fontWeight='small'>
                                 {title}
                             </Text>

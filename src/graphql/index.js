@@ -1,4 +1,4 @@
-import { gql } from "@apollo/client";
+import { gql } from "@apollo/client"
 
 const LOGIN = gql`
     mutation login($email: String!, $password: String!) {
@@ -125,9 +125,24 @@ const NEW_CONTRACT = gql`
     }
 `
 
+const UPDATE_CONTRACT = gql`
+    mutation contract($updateContractInput: UpdateContractInput!) {
+        updateContract(updateContractInput: $updateContractInput) {
+            code
+            status
+            message
+            total
+            data {
+                title,
+                active
+            }
+        }
+    }
+`
+
 const GET_ALL_CONTRACT = gql`
-    query contracts($offset: Int, $limit: Int) {
-        contracts(offset: $offset, limit: $limit){ 
+    query contracts($skip: Int, $limit: Int, $status: String) {
+        contracts(skip: $skip, limit: $limit, status: $status){ 
             code
             status
             message
@@ -164,5 +179,6 @@ export {
     NEW_CONTRACT,
     GET_ALL_CONTRACT,
     GET_CONTRACT_FILE,
-    SEND_CONTRACT
+    SEND_CONTRACT,
+    UPDATE_CONTRACT
 }

@@ -1,46 +1,28 @@
 import cookie from 'cookie'
+import { useRouter } from 'next/router'
+import { useState, useEffect, useMemo } from 'react'
+import { useApolloClient, useMutation } from '@apollo/client'
+import { Button, Flex, useDisclosure, Text, useToast } from '@chakra-ui/react'
+import Board from 'react-trello'
+import { GET_ALL_CONTRACT, UPDATE_CONTRACT } from '../../src/graphql'
+
+// Components
 import dynamic from 'next/dynamic'
 const Layout = dynamic(() => import('../../src/layout'))
-import { useRouter } from 'next/router'
-import Board from 'react-trello'
-import { useState, useEffect } from 'react'
-import { useApolloClient } from '@apollo/client'
-import { GET_ALL_CONTRACT } from '../../src/graphql'
-
-// const data = {
-//     lanes: [
-//         {
-//             id: 'ABERTO',
-//             title: 'Abertos',
-//             label: '2/2',
-//             cards: [
-//                 { id: 'Card1', title: 'Meu primeiro contrato', description: 'novo contrato teste', label: '11/08/2021', tags: [{ bgColor: 'var(--chakra-colors-yellow-100)', color: 'var(--chakra-colors-yellow-800)', title: 'PENDENTE' }], draggable: false },
-//                 { id: 'Card1', title: 'Meu segundo contrato', description: 'novo contrato teste', label: '11/08/2021', tags: [{ bgColor: 'var(--chakra-colors-yellow-100)', color: 'var(--chakra-colors-yellow-800)', title: 'PENDENTE' }] }
-//             ]
-//         },
-//         {
-//             id: 'PREPARACAO',
-//             title: 'Preparação',
-//             label: '0/0',
-//             cards: []
-//         },
-//         {
-//             id: 'ENVIADO',
-//             title: 'Enviado',
-//             label: '0/0',
-//             cards: []
-//         },
-//         {
-//             id: 'ASSINADO',
-//             title: 'Assinado',
-//             label: '0/0',
-//             cards: []
-//         }
-//     ]
-// }
+import ContractForm from '../../src/components/contract/form'
+import DefaultModal from '../../src/components/modal'
+import { getDate } from '../../src/utils'
 
 export default function Contract({ token }) {
     const router = useRouter()
+    const toast = useToast()
+    const { isOpen: isAddOpen, onOpen: onAddOpen, onClose: onAddClose } = useDisclosure()
+    const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure()
+    const [deleteCallback, setDeleteCallback] = useState(null)
+    const [isDeleteLoading, setDeleteLoading] = useState(true)
+    const [updateContract] = useMutation(UPDATE_CONTRACT)
+    const [formData, setFormData] = useState({ title: '', subtitle: '' })
+    const [formMethod, setFormMethod] = useState('CREATE')
     const [contracts, setContracts] = useState({
         lanes: [
             {
@@ -69,17 +51,17 @@ export default function Contract({ token }) {
             }
         ]
     })
+    const data = useMemo(() => contracts, [contracts])
     const client = useApolloClient()
 
-    function getDate(timestamp) {
-        const date = new Date(parseInt(timestamp))
-        return date.toLocaleString('pt-BR')
-    }
-
     async function getContracts() {
-        console.log('teste')
         const response = await client.query({
             query: GET_ALL_CONTRACT,
+            variables: {
+                skip: 0,
+                limit: 1,
+                status: 'OPENED'
+            },
             fetchPolicy: 'no-cache'
         })
 
@@ -89,35 +71,116 @@ export default function Contract({ token }) {
             v.label = getDate(v.createdAt)
         })
 
-        console.log(response.data.contracts.data)
+        const responsePending = await client.query({
+            query: GET_ALL_CONTRACT,
+            variables: {
+                skip: 0,
+                limit: 1,
+                status: 'PENDING'
+            },
+            fetchPolicy: 'no-cache'
+        })
+
+        responsePending.data.contracts.data.map(v => {
+            v.description = v.subtitle
+            v.tags = [{ bgColor: 'var(--chakra-colors-yellow-100)', color: 'var(--chakra-colors-yellow-800)', title: v.status }]
+            v.label = getDate(v.createdAt)
+        })
 
         setContracts({
             lanes: [
                 {
-                    id: 'ABERTO',
+                    id: 'OPENED',
                     title: 'Abertos',
-                    label: '0/0',
+                    label: `${response.data.contracts.data.length > 0 ? response.data.contracts.data.length + 1 : 0} itens`,
                     cards: response.data.contracts.data
                 },
                 {
-                    id: 'PREPARACAO',
+                    id: 'PENDING',
                     title: 'Preparação',
-                    label: '0/0',
-                    cards: []
+                    label: `${responsePending.data.contracts.data.length > 0 ? responsePending.data.contracts.data.length + 1 : 0} itens`,
+                    cards: responsePending.data.contracts.data
                 },
                 {
-                    id: 'ENVIADO',
-                    title: 'Enviado',
-                    label: '0/0',
-                    cards: []
-                },
-                {
-                    id: 'ASSINADO',
+                    id: 'SIGNED',
                     title: 'Assinado',
+                    label: '0/0',
+                    cards: []
+                },
+                {
+                    id: 'SENDEND',
+                    title: 'Enviado',
                     label: '0/0',
                     cards: []
                 }
             ]
+        })
+    }
+
+    function handleDelete(callback, isDeleteConfirm = false) {
+        if (!isDeleteConfirm) {
+            setDeleteLoading(false)
+            setDeleteCallback(() => callback)
+            return onDeleteOpen()
+        }
+
+        onDeleteClose()
+        deleteCallback()
+        setDeleteLoading(true)
+        setDeleteCallback(null)
+    }
+
+    function handleApiDelete(cardId) {
+        handleCardUpdate({
+            id: cardId,
+            active: false
+        })
+    }
+
+    async function handleCardUpdate(contract) {
+        try {
+            const response = await updateContract({ variables: { updateContractInput: contract } })
+
+            if (response.data.updateContract.code != 200)
+                throw new Error()
+
+            toast({
+                title: "Sucesso.",
+                description: "Contrato alterado com sucesso.",
+                status: "success",
+                duration: 3000,
+                isClosable: true
+            })
+        } catch {
+            toast({
+                title: "Erro.",
+                description: "Erro ao alterar o contrato.",
+                status: "error",
+                duration: 3000,
+                isClosable: true
+            })
+        } finally {
+            getContracts()
+        }
+    }
+
+    function handleClick(cardId, laneId) {
+        try {
+            const cards = data.lanes.find(x => x.id == laneId).cards
+            const card = cards.find(x => x.id == cardId)
+            setFormMethod('UPDATE')
+            setFormData({ title: card.title, subtitle: card.subtitle, id: card.id })
+            onAddOpen()
+        } catch (e) {
+            console.log(e)
+        }
+    }
+
+    function handleChangeStatus(cardId, sourceLaneId, targetLaneId, position, cardDetails) {
+        console.log(cardId, sourceLaneId, targetLaneId, position, cardDetails)
+        handleCardUpdate({
+            id: cardId,
+            status: targetLaneId
         })
     }
 
@@ -127,11 +190,44 @@ export default function Contract({ token }) {
     }, [])
 
     return (
-        <Layout token={token} router={router}>
+        <Layout token={token} router={router} title="Contratos">
+            <ContractForm
+                isOpen={isAddOpen}
+                onClose={onAddClose}
+                getContracts={getContracts}
+                data={formData}
+                method={formMethod}
+            />
+            <DefaultModal
+                isOpen={isDeleteOpen}
+                onClose={onDeleteClose}
+                handleSuccess={() => handleDelete(null, true)}
+                loading={isDeleteLoading}
+            >
+                <Text>Você deseja apagar este registro?</Text>
+            </DefaultModal>
+
+            <Flex justifyContent="flex-end" mb='1'>
+                <Button
+                    colorScheme="teal"
+                    variant="outline"
+                    onClick={() => {
+                        setFormData({ title: '', subtitle: '' })
+                        setFormMethod('CREATE')
+                        onAddOpen()
+                    }}
+                >
+                    Novo
+                </Button>
+            </Flex>
             <Board
-                data={contracts}
+                data={data}
                 style={{ backgroundColor: '#fff', display: 'flex', justifyContent: 'center', height: '650px' }}
-                laneStyle={{ width: '24.5%' }}
+                laneStyle={{ width: '24.5%', maxHeight: '70vh' }}
+                onBeforeCardDelete={callback => { handleDelete(callback, false) }}
+                onCardDelete={cardId => { handleApiDelete(cardId) }}
+                onCardClick={(cardId, metadata, laneId) => handleClick(cardId, laneId)}
+                handleDragEnd={(cardId, sourceLaneId, targetLaneId, position, cardDetails) => handleChangeStatus(cardId, sourceLaneId, targetLaneId, position, cardDetails)}
             />
         </Layout>
     )
