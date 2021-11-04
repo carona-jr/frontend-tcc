@@ -148,13 +148,33 @@ const GET_ALL_CONTRACT = gql`
             message
             total
             data {
-                id
+                _id
                 title
                 subtitle
                 ipfsHash
                 ethHash
                 createdAt
                 status
+            }
+        }
+    }
+`
+
+const GET_ALL_CONTRACT_GROUP = gql`
+    query allContracts($contractsInput: ContractsInput!) {
+            contracts(contractsInput: $contractsInput) {
+            message
+            total
+            data {
+                _id,
+                contractsByGroup {
+                    _id,
+                    title,
+                    subtitle,
+                    ipfsHash,
+                    ethHash,
+                    createdAt
+                }
             }
         }
     }
@@ -180,5 +200,6 @@ export {
     GET_ALL_CONTRACT,
     GET_CONTRACT_FILE,
     SEND_CONTRACT,
-    UPDATE_CONTRACT
+    UPDATE_CONTRACT,
+    GET_ALL_CONTRACT_GROUP
 }

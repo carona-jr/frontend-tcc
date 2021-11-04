@@ -26,7 +26,8 @@ import cookie from 'cookie'
 import { useRouter } from 'next/router'
 
 export default function SignIn() {
-    const [setCookie] = useCookies(["user"])
+    // eslint-disable-next-line no-unused-vars
+    const [cookie, setCookie] = useCookies(["user"])
     const [showPassword, setShowPassword] = useState(false)
     const { colorMode } = useColorMode()
     const toast = useToast()
@@ -65,7 +66,7 @@ export default function SignIn() {
                     onSubmit={async (values, actions) => {
                         try {
                             const response = await login({ variables: { email: values.login, password: values.password } })
-
+                            console.log(response)
                             setCookie("token", response.data.login.token, {
                                 path: "/",
                                 maxAge: 604800, // Expires after 7 days
@@ -83,6 +84,7 @@ export default function SignIn() {
                                 isClosable: true
                             })
                         } catch (e) {
+                            console.log(e)
                             toast({
                                 title: "Erro.",
                                 description: "As suas credenciais não foram encontradas.",

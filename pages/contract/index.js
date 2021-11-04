@@ -2,9 +2,10 @@ import cookie from 'cookie'
 import { useRouter } from 'next/router'
 import { useState, useEffect, useMemo } from 'react'
 import { useApolloClient, useMutation } from '@apollo/client'
-import { Button, Flex, useDisclosure, Text, useToast } from '@chakra-ui/react'
+import { Button, Flex, useDisclosure, Text, useToast, Box, Input } from '@chakra-ui/react'
 import Board from 'react-trello'
-import { GET_ALL_CONTRACT, UPDATE_CONTRACT } from '../../src/graphql'
+import { isNull } from 'lodash'
+import { GET_ALL_CONTRACT, GET_ALL_CONTRACT_GROUP, UPDATE_CONTRACT } from '../../src/graphql'
 
 // Components
 import dynamic from 'next/dynamic'
@@ -23,6 +24,8 @@ export default function Contract({ token }) {
     const [updateContract] = useMutation(UPDATE_CONTRACT)
     const [formData, setFormData] = useState({ title: '', subtitle: '' })
     const [formMethod, setFormMethod] = useState('CREATE')
+    const [filter, setFilter] = useState('')
+    const [firstLoading, setFirstLoading] = useState(true)
     const [contracts, setContracts] = useState({
         lanes: [
             {
@@ -54,37 +57,57 @@ export default function Contract({ token }) {
     const data = useMemo(() => contracts, [contracts])
     const client = useApolloClient()
 
-    async function getContracts() {
+    async function getContracts(text) {
+        let contractsInput = {
+            skip: 0,
+            limit: 4,
+            groupBy: 'status'
+        }
+
+        if (!isNull(text)) {
+            contractsInput.filterBy = encodeURI(JSON.stringify({
+                title: { $regex: text, $options: 'i' }
+            }))
+        }
+
         const response = await client.query({
-            query: GET_ALL_CONTRACT,
-            variables: {
-                skip: 0,
-                limit: 1,
-                status: 'OPENED'
-            },
+            query: GET_ALL_CONTRACT_GROUP,
+            variables: { contractsInput },
             fetchPolicy: 'no-cache'
         })
+        const status = ['OPENED', 'PENDING', 'SENDED', 'SIGNED']
+        const colorStatus = {
+            BG_OPENED: 'var(--chakra-colors-yellow-100)',
+            BG_PENDING: 'var(--chakra-colors-cyan-100)',
+            BG_SENDED: 'var(--chakra-colors-red-100)',
+            BG_SIGNED: 'var(--chakra-colors-green-100)',
+            CO_OPENED: 'var(--chakra-colors-yellow-800)',
+            CO_PENDING: 'var(--chakra-colors-cyan-800)',
+            CO_SENDED: 'var(--chakra-colors-red-800)',
+            CO_SIGNED: 'var(--chakra-colors-green-800)'
+        }
+        const responseData = response.data.contracts.data
+        let contractCards = {
+            OPENED: [],
+            PENDING: [],
+            SENDED: [],
+            SIGNED: []
+        }
 
-        response.data.contracts.data.map(v => {
-            v.description = v.subtitle
-            v.tags = [{ bgColor: 'var(--chakra-colors-yellow-100)', color: 'var(--chakra-colors-yellow-800)', title: v.status }]
-            v.label = getDate(v.createdAt)
-        })
+        status.map(st => {
+            const data = responseData.find(x => x._id == st)
 
-        const responsePending = await client.query({
-            query: GET_ALL_CONTRACT,
-            variables: {
-                skip: 0,
-                limit: 1,
-                status: 'PENDING'
-            },
-            fetchPolicy: 'no-cache'
-        })
+            if (data) {
+                const cards = data.contractsByGroup
 
-        responsePending.data.contracts.data.map(v => {
-            v.description = v.subtitle
-            v.tags = [{ bgColor: 'var(--chakra-colors-yellow-100)', color: 'var(--chakra-colors-yellow-800)', title: v.status }]
-            v.label = getDate(v.createdAt)
+                contractCards[st] = cards.map(card => ({
+                    ...card,
+                    id: card._id,
+                    description: card.subtitle,
+                    tags: [{ bgcolor: colorStatus[`BG_${st}`], color: colorStatus[`CO_${st}`], title: st }],
+                    label: getDate(card.createdAt)
+                }))
+            }
         })
 
         setContracts({
@@ -92,28 +115,39 @@ export default function Contract({ token }) {
                 {
                     id: 'OPENED',
                     title: 'Abertos',
-                    label: `${response.data.contracts.data.length > 0 ? response.data.contracts.data.length + 1 : 0} itens`,
-                    cards: response.data.contracts.data
+                    label: `${contractCards.OPENED.length} itens`,
+                    cards: contractCards.OPENED
                 },
                 {
                     id: 'PENDING',
                     title: 'Preparação',
-                    label: `${responsePending.data.contracts.data.length > 0 ? responsePending.data.contracts.data.length + 1 : 0} itens`,
-                    cards: responsePending.data.contracts.data
+                    label: `${contractCards.PENDING.length} itens`,
+                    cards: contractCards.PENDING
+                },
+                {
+                    id: 'SENDED',
+                    title: 'Enviado',
+                    label: `${contractCards.SENDED.length} itens`,
+                    cards: contractCards.SENDED
                 },
                 {
                     id: 'SIGNED',
                     title: 'Assinado',
-                    label: '0/0',
-                    cards: []
-                },
-                {
-                    id: 'SENDEND',
-                    title: 'Enviado',
-                    label: '0/0',
-                    cards: []
+                    label: `${contractCards.SIGNED.length} itens`,
+                    cards: contractCards.SIGNED
                 }
             ]
+        })
+    }
+
+    function handleScroll(requestedPage, laneId) {
+        console.log(requestedPage, laneId)
+        return new Promise((res, rej) => {
+            try {
+                res([])
+            } catch {
+                rej([])
+            }
         })
     }
 
@@ -185,9 +219,15 @@ export default function Contract({ token }) {
     }
 
     useEffect(() => {
-        getContracts()
+        if (firstLoading) {
+            getContracts()
+            return setFirstLoading(false)
+        }
+
+        const timeOutId = setTimeout(() => getContracts(filter), 800)
+        return () => clearTimeout(timeOutId)
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
+    }, [filter])
 
     return (
         <Layout token={token} router={router} title="Contratos">
@@ -207,7 +247,10 @@ export default function Contract({ token }) {
                 <Text>Você deseja apagar este registro?</Text>
             </DefaultModal>
 
-            <Flex justifyContent="flex-end" mb='1'>
+            <Flex justifyContent="space-between" mb='1' w='100%'>
+                <Box w='100%'>
+                    <Input value={filter || ''} w='30%' placeholder="pesquise..." onChange={e => setFilter(e.target.value)} />
+                </Box>
                 <Button
                     colorScheme="teal"
                     variant="outline"
@@ -228,6 +271,8 @@ export default function Contract({ token }) {
                 onCardDelete={cardId => { handleApiDelete(cardId) }}
                 onCardClick={(cardId, metadata, laneId) => handleClick(cardId, laneId)}
                 handleDragEnd={(cardId, sourceLaneId, targetLaneId, position, cardDetails) => handleChangeStatus(cardId, sourceLaneId, targetLaneId, position, cardDetails)}
+                onLaneScroll={(requestedPage, laneId) => handleScroll(requestedPage, laneId)}
+
             />
         </Layout>
     )
