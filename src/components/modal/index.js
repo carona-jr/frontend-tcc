@@ -13,10 +13,11 @@ export default function DefaultModal({
     btnSuccessText = 'Sim',
     btnCancelText = 'Não',
     modalName = 'Alerta',
-    loading = false
+    loading = false,
+    size = 'sm'
 }) {
     return (
-        <Modal isOpen={isOpen} onClose={onClose} size="sm" isCentered>
+        <Modal isOpen={isOpen} onClose={onClose} size={size} isCentered>
             <ModalOverlay />
             <ModalContent borderRadius={['0', '12px']}>
                 <ModalHeader>{modalName}</ModalHeader>

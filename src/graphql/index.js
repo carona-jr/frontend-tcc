@@ -180,6 +180,23 @@ const GET_ALL_CONTRACT_GROUP = gql`
     }
 `
 
+const GET_CONTRACT_BY_ID = gql`
+    query contract($_id: ID!) {
+        contract(_id: $_id) {
+            message
+            total
+            data {
+                _id,
+                title,
+                subtitle,
+                ipfsHash,
+                ethHash,
+                createdAt
+            }
+        }
+    }
+`
+
 const GET_CONTRACT_FILE = gql`
     query contractFile($contractId: ID!) {
         contractFile(contractId: $contractId)
@@ -201,5 +218,6 @@ export {
     GET_CONTRACT_FILE,
     SEND_CONTRACT,
     UPDATE_CONTRACT,
-    GET_ALL_CONTRACT_GROUP
+    GET_ALL_CONTRACT_GROUP,
+    GET_CONTRACT_BY_ID
 }

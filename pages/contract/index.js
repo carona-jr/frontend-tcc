@@ -2,10 +2,11 @@ import cookie from 'cookie'
 import { useRouter } from 'next/router'
 import { useState, useEffect, useMemo } from 'react'
 import { useApolloClient, useMutation } from '@apollo/client'
-import { Button, Flex, useDisclosure, Text, useToast, Box, Input } from '@chakra-ui/react'
+import { Button, Flex, useDisclosure, BreadcrumbItem, BreadcrumbLink, Text, useToast, Box, Input } from '@chakra-ui/react'
 import Board from 'react-trello'
 import { isNull } from 'lodash'
 import { GET_ALL_CONTRACT, GET_ALL_CONTRACT_GROUP, UPDATE_CONTRACT } from '../../src/graphql'
+import { RiFilePaper2Fill } from 'react-icons/ri'
 
 // Components
 import dynamic from 'next/dynamic'
@@ -56,11 +57,28 @@ export default function Contract({ token }) {
     })
     const data = useMemo(() => contracts, [contracts])
     const client = useApolloClient()
+    const status = ['OPENED', 'PENDING', 'SENDED', 'SIGNED']
+    const colorStatus = {
+        BG_OPENED: 'var(--chakra-colors-yellow-100)',
+        BG_PENDING: 'var(--chakra-colors-cyan-100)',
+        BG_SENDED: 'var(--chakra-colors-red-100)',
+        BG_SIGNED: 'var(--chakra-colors-green-100)',
+        CO_OPENED: 'var(--chakra-colors-yellow-800)',
+        CO_PENDING: 'var(--chakra-colors-cyan-800)',
+        CO_SENDED: 'var(--chakra-colors-red-800)',
+        CO_SIGNED: 'var(--chakra-colors-green-800)'
+    }
+    const nameStatus = {
+        OPENED: 'Aberto',
+        PENDING: 'Preparação',
+        SENDED: 'Enviado',
+        SIGNED: 'Assinado'
+    }
 
-    async function getContracts(text) {
+    async function getContracts(text = null, reload = false, skip = 0, limit = 10, lane = null) {
         let contractsInput = {
-            skip: 0,
-            limit: 4,
+            skip: skip,
+            limit: limit,
             groupBy: 'status'
         }
 
@@ -75,17 +93,6 @@ export default function Contract({ token }) {
             variables: { contractsInput },
             fetchPolicy: 'no-cache'
         })
-        const status = ['OPENED', 'PENDING', 'SENDED', 'SIGNED']
-        const colorStatus = {
-            BG_OPENED: 'var(--chakra-colors-yellow-100)',
-            BG_PENDING: 'var(--chakra-colors-cyan-100)',
-            BG_SENDED: 'var(--chakra-colors-red-100)',
-            BG_SIGNED: 'var(--chakra-colors-green-100)',
-            CO_OPENED: 'var(--chakra-colors-yellow-800)',
-            CO_PENDING: 'var(--chakra-colors-cyan-800)',
-            CO_SENDED: 'var(--chakra-colors-red-800)',
-            CO_SIGNED: 'var(--chakra-colors-green-800)'
-        }
         const responseData = response.data.contracts.data
         let contractCards = {
             OPENED: [],
@@ -110,43 +117,42 @@ export default function Contract({ token }) {
             }
         })
 
-        setContracts({
-            lanes: [
-                {
-                    id: 'OPENED',
-                    title: 'Abertos',
-                    label: `${contractCards.OPENED.length} itens`,
-                    cards: contractCards.OPENED
-                },
-                {
-                    id: 'PENDING',
-                    title: 'Preparação',
-                    label: `${contractCards.PENDING.length} itens`,
-                    cards: contractCards.PENDING
-                },
-                {
-                    id: 'SENDED',
-                    title: 'Enviado',
-                    label: `${contractCards.SENDED.length} itens`,
-                    cards: contractCards.SENDED
-                },
-                {
-                    id: 'SIGNED',
-                    title: 'Assinado',
-                    label: `${contractCards.SIGNED.length} itens`,
-                    cards: contractCards.SIGNED
-                }
-            ]
-        })
+        let lanes = []
+        if (lane == null || reload) {
+            status.map(st => {
+                lanes.push({
+                    id: st,
+                    title: nameStatus[st],
+                    label: `${contractCards[st].length} itens`,
+                    cards: contractCards[st]
+                })
+            })
+        } else {
+            status.map(st => {
+                const data = contracts.lanes.find(x => x.id == st)
+
+                if (lane != st)
+                    return lanes.push(data)
+
+                lanes.push({
+                    id: st,
+                    title: nameStatus[st],
+                    label: `${parseInt(data.label.split(' ')[0]) + contractCards[st].length} itens`,
+                    cards: [...data.cards, ...contractCards[st]]
+                })
+            })
+        }
+
+        setContracts({ lanes })
     }
 
     function handleScroll(requestedPage, laneId) {
-        console.log(requestedPage, laneId)
         return new Promise((res, rej) => {
             try {
-                res([])
+                getContracts(filter, false, requestedPage * 10 - 10, requestedPage * 10, laneId)
+                res(true)
             } catch {
-                rej([])
+                rej(false)
             }
         })
     }
@@ -173,8 +179,9 @@ export default function Contract({ token }) {
 
     async function handleCardUpdate(contract) {
         try {
+            console.log(contract)
             const response = await updateContract({ variables: { updateContractInput: contract } })
-
+            console.log(response)
             if (response.data.updateContract.code != 200)
                 throw new Error()
 
@@ -210,8 +217,7 @@ export default function Contract({ token }) {
         }
     }
 
-    function handleChangeStatus(cardId, sourceLaneId, targetLaneId, position, cardDetails) {
-        console.log(cardId, sourceLaneId, targetLaneId, position, cardDetails)
+    function handleChangeStatus(cardId, sourceLaneId, targetLaneId) {
         handleCardUpdate({
             id: cardId,
             status: targetLaneId
@@ -224,19 +230,31 @@ export default function Contract({ token }) {
             return setFirstLoading(false)
         }
 
-        const timeOutId = setTimeout(() => getContracts(filter), 800)
+        const timeOutId = setTimeout(() => getContracts(filter, true), 800)
         return () => clearTimeout(timeOutId)
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [filter])
 
+    const breadcrumbItens = [
+        <BreadcrumbItem key="1">
+            <BreadcrumbLink href="/contract">
+                <Flex alignItems="center">
+                    <RiFilePaper2Fill className='breadcrumb-item' />
+                    <Text display={['none', 'inline']} pl="2">Contrato</Text>
+                </Flex>
+            </BreadcrumbLink>
+        </BreadcrumbItem>
+    ]
+
     return (
-        <Layout token={token} router={router} title="Contratos">
+        <Layout token={token} router={router} title="Contratos" breadcrumbs={breadcrumbItens}>
             <ContractForm
                 isOpen={isAddOpen}
                 onClose={onAddClose}
                 getContracts={getContracts}
                 data={formData}
                 method={formMethod}
+                router={router}
             />
             <DefaultModal
                 isOpen={isDeleteOpen}
