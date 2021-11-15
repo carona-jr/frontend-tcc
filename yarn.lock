@@ -3037,6 +3037,11 @@ minimist@^1.2.0:
   resolved "https://registry.yarnpkg.com/minimist/-/minimist-1.2.5.tgz#67d66014b66a6a8aaa0c083c5fd58df4e4e97602"
   integrity sha512-FM9nNUYrRBAELZQT3xeZQ7fmMOBg6nWNmJKTcgsJeaLstP/UODVpGsr5OhXhhXg6f+qtJ8uiZ+PUxkDWcgIXLw==
 
+mongo-object-reader@^1.1.1:
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/mongo-object-reader/-/mongo-object-reader-1.1.1.tgz#7e7768910970749d3866de1138081a4111f8c396"
+  integrity sha512-wmSmeK+C4Vcgep8I+sA1QoNNyTP/iQ0WLyOomY22VekBh+a6tg5eyAdaZbnHNljiXQ10EpH3dCJ6Aivc1raS8Q==
+
 ms@2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/ms/-/ms-2.0.0.tgz#5608aeadfc00be6c2901df5f9861788de0d597c8"

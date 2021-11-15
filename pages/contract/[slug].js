@@ -9,6 +9,7 @@ import { RiFilePaper2Fill } from 'react-icons/ri'
 import { FaSearch } from 'react-icons/fa'
 import { DragDropContext } from 'react-beautiful-dnd'
 import ClauseColumn from '../../src/components/contract/clauses/column'
+import { createObjectID } from 'mongo-object-reader'
 
 // Components
 import dynamic from 'next/dynamic'
@@ -20,18 +21,16 @@ export default function Contract({ token, data }) {
     const { isOpen: isAddOpen, onOpen: onAddOpen, onClose: onAddClose } = useDisclosure()
     const [isAddLoading, setAddLoading] = useState(false)
     const [textAreaInvalid, setTextAreaInvalid] = useState(false)
-    const [textClause, setTextClause] = useState('')
+    const [textClause, setTextClause] = useState({ _id: '', content: '' })
     const client = useApolloClient()
 
     const [clauses, setClauses] = useState({
-        cards: {
-            1: { _id: '1', content: 'Você pode adicionar novas cláusulas' }
-        },
+        cards: {},
         columns: {
             clause: {
                 id: 'clause',
                 title: 'Cláusula',
-                cardIds: ['1']
+                cardIds: []
             }
         },
         // Facilitate reordering of the columns
@@ -68,32 +67,58 @@ export default function Contract({ token, data }) {
 
     function handleAdd() {
         try {
-            if (textClause == '')
+            if (textClause.content == '')
                 return setTextAreaInvalid(true)
 
             setTextAreaInvalid(false)
             setAddLoading(true)
-            const numCard = Object.keys(clauses.cards).length
-            setClauses({
-                cards: {
+
+            let data = { ...clauses }
+            if (textClause._id == '') {
+                const _id = createObjectID()
+                data.cards = {
                     ...clauses.cards,
-                    [numCard + 1]: { _id: `${numCard}`, content: textClause }
-                },
-                columns: {
+                    [_id]: { _id, content: textClause.content }
+                }
+                data.columns = {
                     clause: {
                         ...clauses.columns.clause,
-                        cardIds: [...clauses.columns.clause.cardIds, `${numCard + 1}`]
+                        cardIds: [...clauses.columns.clause.cardIds, _id]
                     }
-                },
-                columnOrder: clauses.columnOrder
-            })
+                }
+            } else {
+                data.cards = {
+                    ...clauses.cards,
+                    [textClause._id]: textClause
+                }
+            }
 
+            setClauses(data)
             setAddLoading(false)
             onAddClose()
-            setTextClause('')
         } catch (e) {
             console.log(e)
         }
+    }
+
+    function handleEdit(cardId) {
+        const data = clauses.cards[cardId]
+        setTextClause(data)
+        onAddOpen()
+    }
+
+    function handleDelete(cardId) {
+        let data = { ...clauses }
+        delete clauses.cards[cardId]
+
+        data.columns = {
+            clause: {
+                ...clauses.columns.clause,
+                cardIds: clauses.columns.clause.cardIds.filter(x => x != cardId)
+            }
+        }
+
+        setClauses(data)
     }
 
     const breadcrumbItens = [
@@ -126,7 +151,7 @@ export default function Contract({ token, data }) {
                 btnSuccessText='Salvar'
                 btnCancelText='Cancelar'
             >
-                <Textarea id="text" placeholder="sua cláusula" onChange={e => setTextClause(e.target.value)} autoFocus border={textAreaInvalid ? '1.5px solid red !important' : '1px solid'} />
+                <Textarea id="text" placeholder="sua cláusula" value={textClause.content} onChange={e => setTextClause({ ...textClause, content: e.target.value })} autoFocus border={textAreaInvalid ? '1.5px solid red !important' : '1px solid'} />
             </DefaultModal>
 
             <Flex justifyContent="flex-end" mb='4' w='100%'>
@@ -134,6 +159,7 @@ export default function Contract({ token, data }) {
                     colorScheme="linkedin"
                     variant="outline"
                     onClick={() => {
+                        setTextClause({ _id: '', content: '' })
                         onAddOpen()
                     }}
                 >
@@ -145,7 +171,7 @@ export default function Contract({ token, data }) {
                     const column = clauses.columns[columnId]
                     const cards = column.cardIds.map(_id => clauses.cards[_id])
 
-                    return <ClauseColumn key={column.id} column={column} cards={cards} />
+                    return <ClauseColumn key={column.id} column={column} cards={cards} handleEdit={handleEdit} handleDelete={handleDelete} />
                 })}
             </DragDropContext>
         </Layout>
