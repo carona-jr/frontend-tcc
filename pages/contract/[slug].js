@@ -10,11 +10,13 @@ import { FaSearch } from 'react-icons/fa'
 import { DragDropContext } from 'react-beautiful-dnd'
 import ClauseColumn from '../../src/components/contract/clauses/column'
 import { createObjectID } from 'mongo-object-reader'
+import { pdf } from '@react-pdf/renderer'
 
 // Components
 import dynamic from 'next/dynamic'
 const Layout = dynamic(() => import('../../src/layout'))
 import DefaultModal from '../../src/components/modal'
+import ContractPDF from '../../src/pdf/contract'
 
 export default function Contract({ token, data }) {
     const router = useRouter()
@@ -155,6 +157,24 @@ export default function Contract({ token, data }) {
             </DefaultModal>
 
             <Flex justifyContent="flex-end" mb='4' w='100%'>
+                <Button
+                    colorScheme="linkedin"
+                    variant="outline"
+                    mr='5'
+                    onClick={async () => {
+                        const blob = await pdf(ContractPDF({ contract: data, clauses: clauses.cards, order: clauses.columns.clause.cardIds })).toString()
+                        const base64 = Buffer.from(blob).toString('base64')
+
+                        const newTab = window.open("", "_blank")
+                        newTab.document.write(`<html>
+                            <body style="margin:0 !important">
+                                <embed width="100%" height="100%" src="data:application/pdf;base64,${base64}" type="application/pdf" />
+                            </body>
+                        </html>`)
+                    }}
+                >
+                    PDF
+                </Button>
                 <Button
                     colorScheme="linkedin"
                     variant="outline"
