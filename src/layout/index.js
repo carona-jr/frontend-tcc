@@ -141,29 +141,27 @@ export default function Layout({ children, token, router, title, breadcrumbs = [
                         </Box>
                     </Flex>
                 </Box>
-                <Box p="5">
-                    <Box bgColor='#fff' p='4' borderRadius='12px'>
-                        <Flex mb='2' alignItems='center' justifyContent='space-between'>
-                            <Text fontSize={['16px', '16px', '24px']} fontWeight='small'>
-                                {title}
-                            </Text>
+                <Box bgColor='#fff' p='5' m='5' borderRadius='12px' minH='85vh'>
+                    <Flex mb='2' alignItems='center' justifyContent='space-between'>
+                        <Text fontSize={['16px', '16px', '24px']} fontWeight='small'>
+                            {title}
+                        </Text>
 
-                            <Breadcrumb my='3' spacing="8px" separator={<FiChevronRight color="gray.500" />} color='#4A5568'>
-                                <BreadcrumbItem>
-                                    <BreadcrumbLink href="/home">
-                                        <Flex alignItems="center">
-                                            <FaHome className='breadcrumb-item' />
-                                            <Text display={['none', 'block']} pl="2">Home</Text>
-                                        </Flex>
-                                    </BreadcrumbLink>
-                                </BreadcrumbItem>
-                                {
-                                    breadcrumbs.map(b => b)
-                                }
-                            </Breadcrumb>
-                        </Flex>
-                        {children}
-                    </Box>
+                        <Breadcrumb my='3' spacing="8px" separator={<FiChevronRight color="gray.500" />} color='#4A5568'>
+                            <BreadcrumbItem>
+                                <BreadcrumbLink href="/home">
+                                    <Flex alignItems="center">
+                                        <FaHome className='breadcrumb-item' />
+                                        <Text display={['none', 'block']} pl="2">Home</Text>
+                                    </Flex>
+                                </BreadcrumbLink>
+                            </BreadcrumbItem>
+                            {
+                                breadcrumbs.map(b => b)
+                            }
+                        </Breadcrumb>
+                    </Flex>
+                    {children}
                 </Box>
             </Flex>
         </Box>

@@ -13,15 +13,13 @@ import {
     Input,
     useToast
 } from '@chakra-ui/react'
-import dynamic from 'next/dynamic'
-const Layout = dynamic(() => import('../../layout'))
 import { useSelector } from 'react-redux'
 import { useState, useRef } from 'react'
 import { Formik, Form, Field } from 'formik'
 import { useMutation } from '@apollo/client'
-import { NEW_CONTRACT, UPDATE_CONTRACT } from '../../graphql'
+import { NEW_CONTRACT, UPDATE_CONTRACT } from '../../../graphql'
 
-export default function ContractForm({ isOpen, onClose, getContracts, data, method, router }) {
+export default function ContractForm({ isOpen, onClose, getContracts, data, method }) {
     const formRef = useRef()
     const toast = useToast()
     const user = useSelector(state => state.User)
@@ -127,7 +125,7 @@ export default function ContractForm({ isOpen, onClose, getContracts, data, meth
                     <Button colorScheme="blue" mr={3} onClick={handleSubmitContract} isLoading={savingContract}>
                         Salvar
                     </Button>
-                    <Button variant="ghost" onClick={() => router.push(`/contract/${data.id}`)} d={method == 'CREATE' ? 'none' : 'block'}>Detalhe</Button>
+                    <Button variant="ghost" onClick={() => window.open(`/contract/${data.id}`, '_blank')} d={method == 'CREATE' ? 'none' : 'block'}>Detalhe</Button>
                     <Button variant="ghost" onClick={onClose} disabled={savingContract}>Cancelar</Button>
                 </ModalFooter>
             </ModalContent>

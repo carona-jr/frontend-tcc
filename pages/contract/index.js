@@ -1,32 +1,46 @@
-import cookie from 'cookie'
-import { useRouter } from 'next/router'
+// React
 import { useState, useEffect, useMemo } from 'react'
+import { useRouter } from 'next/router'
+
+// GraphQL
 import { useApolloClient, useMutation } from '@apollo/client'
-import { Button, Flex, useDisclosure, BreadcrumbItem, BreadcrumbLink, Text, useToast, Box, Input } from '@chakra-ui/react'
+import { GET_ALL_CONTRACT_GROUP, UPDATE_CONTRACT } from '../../src/graphql'
+
+// Icons
+import { RiFilePaper2Fill } from 'react-icons/ri'
+
+// Others
+import cookie from 'cookie'
 import Board from 'react-trello'
 import { isNull } from 'lodash'
-import { GET_ALL_CONTRACT, GET_ALL_CONTRACT_GROUP, UPDATE_CONTRACT } from '../../src/graphql'
-import { RiFilePaper2Fill } from 'react-icons/ri'
+import { Button, Flex, useDisclosure, BreadcrumbItem, BreadcrumbLink, Text, useToast, Box, Input } from '@chakra-ui/react'
 
 // Components
 import dynamic from 'next/dynamic'
 const Layout = dynamic(() => import('../../src/layout'))
-import ContractForm from '../../src/components/contract/form'
+import ContractForm from '../../src/components/contract/forms/contract'
 import DefaultModal from '../../src/components/modal'
 import { getDate } from '../../src/utils'
+import { contractStatus as status, contractColorStatus as colorStatus, contractNameStatus as nameStatus } from '../../src/utils/constants'
 
 export default function Contract({ token }) {
+    // General
     const router = useRouter()
     const toast = useToast()
+    const [firstLoading, setFirstLoading] = useState(true)
+    const client = useApolloClient()
+
+    // Contract
     const { isOpen: isAddOpen, onOpen: onAddOpen, onClose: onAddClose } = useDisclosure()
+    const [formData, setFormData] = useState({ title: '', subtitle: '' })
+    const [formMethod, setFormMethod] = useState('CREATE')
+    const [updateContract] = useMutation(UPDATE_CONTRACT)
     const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure()
     const [deleteCallback, setDeleteCallback] = useState(null)
     const [isDeleteLoading, setDeleteLoading] = useState(true)
-    const [updateContract] = useMutation(UPDATE_CONTRACT)
-    const [formData, setFormData] = useState({ title: '', subtitle: '' })
-    const [formMethod, setFormMethod] = useState('CREATE')
     const [filter, setFilter] = useState('')
-    const [firstLoading, setFirstLoading] = useState(true)
+
+    // Kanban
     const [contracts, setContracts] = useState({
         lanes: [
             {
@@ -56,24 +70,6 @@ export default function Contract({ token }) {
         ]
     })
     const data = useMemo(() => contracts, [contracts])
-    const client = useApolloClient()
-    const status = ['OPENED', 'PENDING', 'SENDED', 'SIGNED']
-    const colorStatus = {
-        BG_OPENED: 'var(--chakra-colors-yellow-100)',
-        BG_PENDING: 'var(--chakra-colors-cyan-100)',
-        BG_SENDED: 'var(--chakra-colors-red-100)',
-        BG_SIGNED: 'var(--chakra-colors-green-100)',
-        CO_OPENED: 'var(--chakra-colors-yellow-800)',
-        CO_PENDING: 'var(--chakra-colors-cyan-800)',
-        CO_SENDED: 'var(--chakra-colors-red-800)',
-        CO_SIGNED: 'var(--chakra-colors-green-800)'
-    }
-    const nameStatus = {
-        OPENED: 'Aberto',
-        PENDING: 'Preparação',
-        SENDED: 'Enviado',
-        SIGNED: 'Assinado'
-    }
 
     async function getContracts(text = null, reload = false, skip = 0, limit = 10, lane = null) {
         let contractsInput = {

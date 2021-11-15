@@ -1,4 +1,20 @@
+// React
 import { useState } from 'react'
+import { useDispatch } from 'react-redux'
+import { updateUser } from '../../src/actions'
+import { useRouter } from 'next/router'
+
+// GraphQL
+import { LOGIN } from '../../src/graphql'
+import { useMutation } from '@apollo/client'
+
+// Icons
+import { AiFillEye, AiFillEyeInvisible, AiTwotoneLock } from 'react-icons/ai'
+
+// Others
+import cookie from 'cookie'
+import { useCookies } from "react-cookie"
+import validator from 'validator'
 import { Formik, Form, Field } from 'formik'
 import {
     Box,
@@ -15,15 +31,6 @@ import {
     Center,
     useToast
 } from '@chakra-ui/react'
-import { AiFillEye, AiFillEyeInvisible, AiTwotoneLock } from 'react-icons/ai'
-import { LOGIN } from '../../src/graphql'
-import { useMutation } from '@apollo/client'
-import { useDispatch } from 'react-redux'
-import { updateUser } from '../../src/actions'
-import validator from 'validator'
-import { useCookies } from "react-cookie"
-import cookie from 'cookie'
-import { useRouter } from 'next/router'
 
 export default function SignIn() {
     // eslint-disable-next-line no-unused-vars
@@ -66,7 +73,7 @@ export default function SignIn() {
                     onSubmit={async (values, actions) => {
                         try {
                             const response = await login({ variables: { email: values.login, password: values.password } })
-                            console.log(response)
+
                             setCookie("token", response.data.login.token, {
                                 path: "/",
                                 maxAge: 604800, // Expires after 7 days
@@ -84,7 +91,6 @@ export default function SignIn() {
                                 isClosable: true
                             })
                         } catch (e) {
-                            console.log(e)
                             toast({
                                 title: "Erro.",
                                 description: "As suas credenciais não foram encontradas.",
