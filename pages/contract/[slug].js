@@ -8,7 +8,7 @@ import { getApolloClient } from '../../lib/apolloNextClient'
 import { GET_CONTRACT_BY_ID } from '../../src/graphql'
 
 // Icons
-import { FaSearch } from 'react-icons/fa'
+import { FaSearch, FaPen, FaTrash } from 'react-icons/fa'
 import { RiFilePaper2Fill } from 'react-icons/ri'
 
 // Others
@@ -16,15 +16,29 @@ import cookie from 'cookie'
 import { pdf } from '@react-pdf/renderer'
 import { DragDropContext } from 'react-beautiful-dnd'
 import { createObjectID } from 'mongo-object-reader'
-import { Button, Flex, BreadcrumbItem, BreadcrumbLink, Text, useToast, useDisclosure, Textarea } from '@chakra-ui/react'
+import {
+    Button,
+    Flex,
+    BreadcrumbItem,
+    BreadcrumbLink,
+    Text,
+    useDisclosure,
+    Textarea,
+    Grid,
+    GridItem,
+    Heading,
+    Badge,
+    Box
+} from '@chakra-ui/react'
 
 // Components
 import dynamic from 'next/dynamic'
 const Layout = dynamic(() => import('../../src/layout'))
 import ContractPDF from '../../src/pdf/contract'
 import DefaultModal from '../../src/components/modal'
-import RelatedUsers from '../../src/components/contract/forms/relatedUsers'
+import Signers from '../../src/components/contract/forms/signers'
 import ClauseColumn from '../../src/components/contract/clauses/column'
+import { getDate } from '../../src/utils'
 
 export default function Contract({ token, data }) {
     const router = useRouter()
@@ -49,10 +63,10 @@ export default function Contract({ token, data }) {
     })
 
     // Related Users
-    const { isOpen: isAddRelatedUserOpen, onOpen: onAddRelatedUserOpen, onClose: onAddRelatedUserClose } = useDisclosure()
-    const [isAddRelatedUserLoading, setAddRelatedUserLoading] = useState(false)
-    const [relatedUser, setRelatedUser] = useState({ name: '', email: '', document: '' })
-    const [relatedUserMethod, setRelatedUserMethod] = useState('CREATE')
+    const { isOpen: isAddSignersOpen, onOpen: onAddSignersOpen, onClose: onAddSignersClose } = useDisclosure()
+    const [signer, setSigner] = useState({ name: '', email: '', document: '' })
+    const [signersMethod, setSignersMethod] = useState('CREATE')
+    const [signersList, setSignersList] = useState([{ _id: '256160', name: 'carlos', email: 'carona_jr@hotmail.com', document: '1451', signerStatus: 'pending' }])
 
     function onDragEnd(result) {
         const { destination, source, draggableId } = result
@@ -138,8 +152,16 @@ export default function Contract({ token, data }) {
         setClauses(data)
     }
 
-    function handleAddRelatedUser() {
+    function handleEditSigner(_id) {
+        const data = signersList.find(x => x._id == _id)
+        setSigner(data)
+        setSignersMethod('UPDATE')
+        onAddSignersOpen()
+    }
 
+    function handleDeleteSigner(_id) {
+        const list = signersList.filter(x => x._id != _id)
+        setSignersList(list)
     }
 
     const breadcrumbItens = [
@@ -176,18 +198,14 @@ export default function Contract({ token, data }) {
                 <Textarea id="text" placeholder="sua cláusula" value={textClause.content} onChange={e => setTextClause({ ...textClause, content: e.target.value })} autoFocus border={textAreaInvalid ? '1.5px solid red !important' : '1px solid'} />
             </DefaultModal>
 
-            <DefaultModal
-                modalName="Cláusula"
-                isOpen={isAddRelatedUserOpen}
-                onClose={onAddRelatedUserClose}
-                handleSuccess={() => handleAddRelatedUser()}
-                loading={isAddRelatedUserLoading}
-                size='lg'
-                btnSuccessText='Salvar'
-                btnCancelText='Cancelar'
-            >
-                <RelatedUsers data={relatedUser} method={relatedUserMethod} />
-            </DefaultModal>
+            <Signers
+                isOpen={isAddSignersOpen}
+                onClose={onAddSignersClose}
+                data={signer}
+                list={signersList}
+                setList={setSignersList}
+                method={signersMethod}
+            />
 
             <Flex justifyContent="flex-end" mb='4' w='100%'>
                 <Button
@@ -195,7 +213,7 @@ export default function Contract({ token, data }) {
                     variant="outline"
                     mr='5'
                     onClick={async () => {
-                        const blob = await pdf(ContractPDF({ contract: data, clauses: clauses.cards, order: clauses.columns.clause.cardIds })).toString()
+                        const blob = await pdf(ContractPDF({ contract: data, clauses: clauses.cards, order: clauses.columns.clause.cardIds, signers: signersList })).toString()
                         const base64 = Buffer.from(blob).toString('base64')
 
                         const newTab = window.open("", "_blank")
@@ -213,7 +231,9 @@ export default function Contract({ token, data }) {
                     variant="outline"
                     mr='5'
                     onClick={() => {
-                        onAddRelatedUserOpen()
+                        setSigner({ name: '', email: '', document: '' })
+                        setSignersMethod('CREATE')
+                        onAddSignersOpen()
                     }}
                 >
                     Nova Parte
@@ -230,14 +250,62 @@ export default function Contract({ token, data }) {
                 </Button>
             </Flex>
 
-            <DragDropContext onDragEnd={onDragEnd}>
-                {clauses.columnOrder.map(columnId => {
-                    const column = clauses.columns[columnId]
-                    const cards = column.cardIds.map(_id => clauses.cards[_id])
+            <Box mb="5">
+                <Text fontSize="16px" mb="3" textTransform="uppercase">Cláusulas</Text>
+                {clauses.columns.clause.cardIds.length == 0 ? <Text color='rgba(0, 0, 0, 0.5)'>Não foi adicionada nenhuma cláusula</Text> : <></>}
+                <DragDropContext onDragEnd={onDragEnd}>
+                    {clauses.columnOrder.map(columnId => {
+                        const column = clauses.columns[columnId]
+                        const cards = column.cardIds.map(_id => clauses.cards[_id])
 
-                    return <ClauseColumn key={column.id} column={column} cards={cards} handleEdit={handleEditClause} handleDelete={handleDeleteClause} />
-                })}
-            </DragDropContext>
+                        return <ClauseColumn key={column.id} column={column} cards={cards} handleEdit={handleEditClause} handleDelete={handleDeleteClause} />
+                    })}
+                </DragDropContext>
+            </Box>
+
+            <Box mb="5">
+                <Text fontSize="16px" mb="3" textTransform="uppercase">Assinaturas</Text>
+                {signersList.length == 0 ? <Text color='rgba(0, 0, 0, 0.5)'>Não foi adicionada nenhuma assinatura</Text> : <></>}
+                <Grid templateColumns="repeat(12, 1fr)" gap={2}>
+                    {
+                        signersList.map(s => {
+                            return (
+                                <GridItem key={s._id} colSpan="3" p="2" border="1px solid rgba(0, 0, 0, 0.1)">
+                                    <Box
+                                        as="related-users"
+                                        maxW="sm"
+                                        p="5"
+                                        borderWidth="1px"
+                                        borderColor='blackAlpha.100'
+                                        rounded="md"
+                                        backgroundColor='white'
+                                        key={1}
+                                    >
+                                        <Heading size="md" my="2">
+                                            <Flex justifyContent="space-between" alignItems='center'>
+                                                <Text>{s.name}</Text>
+                                                <Box fontSize="14px" cursor='pointer'>
+                                                    <FaPen onClick={() => handleEditSigner(s._id)} style={{ marginBottom: '8px' }} />
+                                                    <FaTrash onClick={() => handleDeleteSigner(s._id)} />
+                                                </Box>
+                                            </Flex>
+                                        </Heading>
+                                        <Box mb="2">
+                                            <Text style={{ fontSize: '12px', lineHeight: '16px' }}>E-mail: {s.email}</Text>
+                                            <Text style={{ fontSize: '12px', lineHeight: '16px' }}>Documento: {s.document}</Text>
+                                        </Box>
+                                        <Flex direction='row' fontSize="12px" justifyContent='space-between'>
+                                            <Text>{getDate(s.createdAt)}</Text>
+                                            <Badge colorScheme='yellow' lineHeight='24px'>{s.signerStatus}</Badge>
+                                        </Flex>
+                                    </Box>
+                                </GridItem>
+                            )
+                        })
+                    }
+                </Grid>
+            </Box>
+
         </Layout>
     )
 }
