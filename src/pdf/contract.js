@@ -1,5 +1,6 @@
 import React from 'react'
 import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
+import ReactHtmlParses from 'react-html-parser'
 
 // Create styles
 const styles = StyleSheet.create({
@@ -53,7 +54,7 @@ export default function ContractPDF({ contract, clauses, order, signers }) {
                 </View>
                 <View style={styles.section}>
                     {order.map(_id => (
-                        <Text key={_id} style={styles.clauses}>{clauses[_id].content}</Text>
+                        <Text key={_id}>{ReactHtmlParses(clauses[_id].content)}</Text>
                     ))}
                 </View>
                 <View style={styles.signers}>

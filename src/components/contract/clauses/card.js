@@ -1,6 +1,8 @@
+import { useRef } from 'react'
 import { Draggable } from 'react-beautiful-dnd'
 import styled from 'styled-components'
 import { FaPen, FaTrash } from 'react-icons/fa'
+import ReactHtmlParses from 'react-html-parser'
 
 const Container = styled.div`
     border: 1px solid lightgrey;
@@ -12,15 +14,14 @@ const Container = styled.div`
     align-items: center;
 `
 
-const Text = styled.div`
-`
-
 const Icons = styled.div`
     cursor: pointer;
     display: flex;
 `
 
 export default function ClauseCard({ card, index, handleEdit, handleDelete }) {
+    const cardRef = useRef()
+
     return (
         <Draggable draggableId={card._id} index={index}>
             {provided => (
@@ -29,11 +30,9 @@ export default function ClauseCard({ card, index, handleEdit, handleDelete }) {
                     {...provided.dragHandleProps}
                     ref={provided.innerRef}
                 >
-                    <Text>
-                        {card.content}
-                    </Text>
+                    <div ref={cardRef}>{ReactHtmlParses(card.content)}</div>
                     <Icons>
-                        <FaPen style={{ marginRight: '12px' }} onClick={() => handleEdit(card._id)} />
+                        <FaPen style={{ marginRight: '12px' }} onClick={() => handleEdit(card._id, cardRef.current.children)} />
                         <FaTrash onClick={() => handleDelete(card._id)} />
                     </Icons>
                 </Container>

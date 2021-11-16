@@ -1,6 +1,7 @@
 // React
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/router'
+import Head from 'next/head'
 
 // GraphQL
 import { useApolloClient, useMutation } from '@apollo/client'
@@ -244,6 +245,10 @@ export default function Contract({ token }) {
 
     return (
         <Layout token={token} router={router} title="Contratos" breadcrumbs={breadcrumbItens}>
+            <Head>
+                <title>Contrato - Quadro</title>
+            </Head>
+
             <ContractForm
                 isOpen={isAddOpen}
                 onClose={onAddClose}

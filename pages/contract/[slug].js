@@ -1,6 +1,7 @@
 // React
-import { useState } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { useRouter } from 'next/router'
+import Head from 'next/head'
 
 // GraphQL
 import { useApolloClient } from '@apollo/client'
@@ -8,8 +9,13 @@ import { getApolloClient } from '../../lib/apolloNextClient'
 import { GET_CONTRACT_BY_ID } from '../../src/graphql'
 
 // Icons
-import { FaSearch, FaPen, FaTrash } from 'react-icons/fa'
+import { FaSearch, FaPen, FaTrash, FaBold, FaItalic, FaUnderline, FaCode, FaHeading, FaQuoteLeft, FaListUl, FaListOl } from 'react-icons/fa'
 import { RiFilePaper2Fill } from 'react-icons/ri'
+
+// Slate
+import { createEditor } from 'slate'
+import { Slate, Editable, withReact } from 'slate-react'
+import { withHistory } from 'slate-history'
 
 // Others
 import cookie from 'cookie'
@@ -23,13 +29,13 @@ import {
     BreadcrumbLink,
     Text,
     useDisclosure,
-    Textarea,
     Grid,
     GridItem,
     Heading,
     Badge,
     Box
 } from '@chakra-ui/react'
+import isHotkey from 'is-hotkey'
 
 // Components
 import dynamic from 'next/dynamic'
@@ -39,16 +45,35 @@ import DefaultModal from '../../src/components/modal'
 import Signers from '../../src/components/contract/forms/signers'
 import ClauseColumn from '../../src/components/contract/clauses/column'
 import { getDate } from '../../src/utils'
+import {
+    HOTKEYS,
+    Element,
+    Leaf,
+    MarkButton,
+    BlockButton,
+    toggleMark,
+    serialize as objToHtml,
+    deserialize as htmlToObj
+} from '../../src/components/htmlEditor'
 
 export default function Contract({ token, data }) {
     const router = useRouter()
     const client = useApolloClient()
 
+    // Slate
+    const editor = useMemo(() => withHistory(withReact(createEditor())), [])
+    const renderElement = useCallback(props => <Element {...props} />, [])
+    const renderLeaf = useCallback(props => <Leaf {...props} />, [])
+    const [value, setValue] = useState([{
+        type: 'paragraph',
+        children: [{ text: '' }]
+    }])
+
     // Clauses
     const { isOpen: isAddClauseOpen, onOpen: onAddClauseOpen, onClose: onAddClauseClose } = useDisclosure()
     const [isAddClauseLoading, setAddClauseLoading] = useState(false)
     const [textAreaInvalid, setTextAreaInvalid] = useState(false)
-    const [textClause, setTextClause] = useState({ _id: '', content: '' })
+    const [clauseId, setClauseId] = useState('')
     const [clauses, setClauses] = useState({
         cards: {},
         columns: {
@@ -98,18 +123,22 @@ export default function Contract({ token, data }) {
 
     function handleAddClause() {
         try {
-            if (textClause.content == '')
-                return setTextAreaInvalid(true)
+            // if (textClause.content == '')
+            //     return setTextAreaInvalid(true)
 
-            setTextAreaInvalid(false)
+            // setTextAreaInvalid(false)
             setAddClauseLoading(true)
 
-            let data = { ...clauses }
-            if (textClause._id == '') {
+            let data = { ...clauses }, content = ''
+            value.map(x => {
+                content += objToHtml(x)
+            })
+
+            if (clauseId == '') {
                 const _id = createObjectID()
                 data.cards = {
                     ...clauses.cards,
-                    [_id]: { _id, content: textClause.content }
+                    [_id]: { _id, content }
                 }
                 data.columns = {
                     clause: {
@@ -120,7 +149,7 @@ export default function Contract({ token, data }) {
             } else {
                 data.cards = {
                     ...clauses.cards,
-                    [textClause._id]: textClause
+                    [clauseId]: { _id: clauseId, content }
                 }
             }
 
@@ -132,10 +161,18 @@ export default function Contract({ token, data }) {
         }
     }
 
-    function handleEditClause(cardId) {
-        const data = clauses.cards[cardId]
-        setTextClause(data)
-        onAddClauseOpen()
+    function handleEditClause(cardId, html) {
+        try {
+            let arr = []
+            Array.from(html).map(x => {
+                arr.push(htmlToObj(x))
+            })
+            setValue(arr)
+            setClauseId(cardId)
+            onAddClauseOpen()
+        } catch (e) {
+            console.log(e)
+        }
     }
 
     function handleDeleteClause(cardId) {
@@ -185,6 +222,9 @@ export default function Contract({ token, data }) {
 
     return (
         <Layout token={token} router={router} title={`Detalhe ${data.title}`} breadcrumbs={breadcrumbItens}>
+            <Head>
+                <title>Contrato - Detalhe</title>
+            </Head>
             <DefaultModal
                 modalName="Cláusula"
                 isOpen={isAddClauseOpen}
@@ -195,7 +235,40 @@ export default function Contract({ token, data }) {
                 btnSuccessText='Salvar'
                 btnCancelText='Cancelar'
             >
-                <Textarea id="text" placeholder="sua cláusula" value={textClause.content} onChange={e => setTextClause({ ...textClause, content: e.target.value })} autoFocus border={textAreaInvalid ? '1.5px solid red !important' : '1px solid'} />
+                <Slate
+                    editor={editor}
+                    value={value}
+                    onChange={newValue => setValue(newValue)}
+                >
+                    <Box mb='4'>
+                        <MarkButton format="bold" icon={<FaBold />} />
+                        <MarkButton format="italic" icon={<FaItalic />} />
+                        <MarkButton format="underline" icon={<FaUnderline />} />
+                        <MarkButton format="code" icon={<FaCode />} />
+                        <BlockButton format="heading-one" icon={<FaHeading />} />
+                        <BlockButton format="heading-two" icon={<FaHeading />} />
+                        <BlockButton format="block-quote" icon={<FaQuoteLeft />} />
+                        <BlockButton format="numbered-list" icon={<FaListOl />} />
+                        <BlockButton format="bulleted-list" icon={<FaListUl />} />
+                    </Box>
+                    <Editable
+                        style={{ height: '150px' }}
+                        renderElement={renderElement}
+                        renderLeaf={renderLeaf}
+                        placeholder="Escreva a sua cláusula aqui"
+                        spellCheck
+                        autoFocus
+                        onKeyDown={event => {
+                            for (const hotkey in HOTKEYS) {
+                                if (isHotkey(hotkey, event)) {
+                                    event.preventDefault()
+                                    const mark = HOTKEYS[hotkey]
+                                    toggleMark(editor, mark)
+                                }
+                            }
+                        }}
+                    />
+                </Slate>
             </DefaultModal>
 
             <Signers
@@ -217,7 +290,11 @@ export default function Contract({ token, data }) {
                         const base64 = Buffer.from(blob).toString('base64')
 
                         const newTab = window.open("", "_blank")
+                        newTab.document.title = `Contrato ${data.title}`
                         newTab.document.write(`<html>
+                            <head>
+                                <title>Contrato ${data.title}</title>
+                            </head>
                             <body style="margin:0 !important">
                                 <embed width="100%" height="100%" src="data:application/pdf;base64,${base64}" type="application/pdf" />
                             </body>
@@ -242,7 +319,11 @@ export default function Contract({ token, data }) {
                     colorScheme="linkedin"
                     variant="outline"
                     onClick={() => {
-                        setTextClause({ _id: '', content: '' })
+                        setValue([{
+                            type: 'paragraph',
+                            children: [{ text: '' }]
+                        }])
+                        setClauseId('')
                         onAddClauseOpen()
                     }}
                 >
