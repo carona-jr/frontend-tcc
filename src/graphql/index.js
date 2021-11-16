@@ -167,6 +167,7 @@ const GET_ALL_CONTRACT_GROUP = gql`
             total
             data {
                 _id,
+                total,
                 contractsByGroup {
                     _id,
                     title,

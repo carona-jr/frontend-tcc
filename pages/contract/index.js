@@ -40,6 +40,16 @@ export default function Contract({ token }) {
     const [deleteCallback, setDeleteCallback] = useState(null)
     const [isDeleteLoading, setDeleteLoading] = useState(true)
     const [filter, setFilter] = useState('')
+    const [contractTotal, setContractTotal] = useState({
+        OPENED: 0,
+        PENDING: 0,
+        SENDED: 0,
+        SIGNED: 0,
+        PAGE_OPENED: 1,
+        PAGE_PENDING: 1,
+        PAGE_SENDED: 1,
+        PAGE_SIGNED: 1
+    })
 
     // Kanban
     const [contracts, setContracts] = useState({
@@ -97,12 +107,19 @@ export default function Contract({ token }) {
             SENDED: [],
             SIGNED: []
         }
+        let total = {
+            OPENED: 0,
+            PENDING: 0,
+            SENDED: 0,
+            SIGNED: 0
+        }
 
         status.map(st => {
             const data = responseData.find(x => x._id == st)
 
             if (data) {
                 const cards = data.contractsByGroup
+                total[st] = data.total
 
                 contractCards[st] = cards.map(card => ({
                     ...card,
@@ -116,11 +133,18 @@ export default function Contract({ token }) {
 
         let lanes = []
         if (lane == null || reload) {
+            setContractTotal({
+                ...total,
+                PAGE_OPENED: 1,
+                PAGE_PENDING: 1,
+                PAGE_SENDED: 1,
+                PAGE_SIGNED: 1
+            })
             status.map(st => {
                 lanes.push({
                     id: st,
                     title: nameStatus[st],
-                    label: `${contractCards[st].length} itens`,
+                    label: `${total[st]} itens`,
                     cards: contractCards[st]
                 })
             })
@@ -134,7 +158,7 @@ export default function Contract({ token }) {
                 lanes.push({
                     id: st,
                     title: nameStatus[st],
-                    label: `${parseInt(data.label.split(' ')[0]) + contractCards[st].length} itens`,
+                    label: `${total[st]} itens`,
                     cards: [...data.cards, ...contractCards[st]]
                 })
             })
@@ -143,10 +167,22 @@ export default function Contract({ token }) {
         setContracts({ lanes })
     }
 
-    function handleScroll(requestedPage, laneId) {
+    function handleScroll(_, laneId) {
         return new Promise((res, rej) => {
             try {
-                getContracts(filter, false, requestedPage * 10 - 10, requestedPage * 10, laneId)
+                const totalLaneId = parseInt(contractTotal[laneId])
+                const totalPageLaneId = parseInt(totalLaneId / 10)
+                const currentPage = contractTotal[`PAGE_${laneId}`]
+                const totalPage = totalLaneId % 10 == 0 ? totalPageLaneId : totalPageLaneId + 1
+
+                if (currentPage < totalPage) {
+                    const nextPage = currentPage + 1
+                    getContracts(filter, false, nextPage * 10 - 10, 10, laneId)
+                    setContractTotal({
+                        ...contractTotal,
+                        [`PAGE_${laneId}`]: nextPage
+                    })
+                }
                 res(true)
             } catch {
                 rej(false)
