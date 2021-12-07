@@ -72,7 +72,6 @@ export default function Contract({ token, data }) {
     // Clauses
     const { isOpen: isAddClauseOpen, onOpen: onAddClauseOpen, onClose: onAddClauseClose } = useDisclosure()
     const [isAddClauseLoading, setAddClauseLoading] = useState(false)
-    const [textAreaInvalid, setTextAreaInvalid] = useState(false)
     const [clauseId, setClauseId] = useState('')
     const [clauses, setClauses] = useState({
         cards: {},
@@ -244,10 +243,10 @@ export default function Contract({ token, data }) {
                         <MarkButton format="bold" icon={<FaBold />} />
                         <MarkButton format="italic" icon={<FaItalic />} />
                         <MarkButton format="underline" icon={<FaUnderline />} />
-                        <MarkButton format="code" icon={<FaCode />} />
+                        {/* <MarkButton format="code" icon={<FaCode />} /> */}
                         <BlockButton format="heading-one" icon={<FaHeading />} />
                         <BlockButton format="heading-two" icon={<FaHeading />} />
-                        <BlockButton format="block-quote" icon={<FaQuoteLeft />} />
+                        {/* <BlockButton format="block-quote" icon={<FaQuoteLeft />} /> */}
                         <BlockButton format="numbered-list" icon={<FaListOl />} />
                         <BlockButton format="bulleted-list" icon={<FaListUl />} />
                     </Box>
@@ -313,7 +312,7 @@ export default function Contract({ token, data }) {
                         onAddSignersOpen()
                     }}
                 >
-                    Nova Parte
+                    Nova Assinatura
                 </Button>
                 <Button
                     colorScheme="linkedin"
@@ -331,27 +330,33 @@ export default function Contract({ token, data }) {
                 </Button>
             </Flex>
 
-            <Box mb="5">
-                <Text fontSize="16px" mb="3" textTransform="uppercase">Cláusulas</Text>
+            <Box mb="10" mx="6">
+                <Text fontSize="16px" mb="6" textTransform="uppercase">Cláusulas</Text>
                 {clauses.columns.clause.cardIds.length == 0 ? <Text color='rgba(0, 0, 0, 0.5)'>Não foi adicionada nenhuma cláusula</Text> : <></>}
                 <DragDropContext onDragEnd={onDragEnd}>
                     {clauses.columnOrder.map(columnId => {
                         const column = clauses.columns[columnId]
                         const cards = column.cardIds.map(_id => clauses.cards[_id])
-
                         return <ClauseColumn key={column.id} column={column} cards={cards} handleEdit={handleEditClause} handleDelete={handleDeleteClause} />
                     })}
                 </DragDropContext>
             </Box>
 
-            <Box mb="5">
+            <Box mb="5" mx="6">
                 <Text fontSize="16px" mb="3" textTransform="uppercase">Assinaturas</Text>
                 {signersList.length == 0 ? <Text color='rgba(0, 0, 0, 0.5)'>Não foi adicionada nenhuma assinatura</Text> : <></>}
                 <Grid templateColumns="repeat(12, 1fr)" gap={2}>
                     {
                         signersList.map(s => {
                             return (
-                                <GridItem key={s._id} colSpan="3" p="2" border="1px solid rgba(0, 0, 0, 0.1)">
+                                <GridItem
+                                    key={s._id}
+                                    colSpan="3"
+                                    p="2"
+                                    border="1px solid rgba(0, 0, 0, 0.1)"
+                                    borderRadius="4"
+                                    _hover={{ cursor: 'pointer', backgroundColor: 'rgba(0, 0, 0, 0.1)' }}
+                                >
                                     <Box
                                         as="related-users"
                                         maxW="sm"
