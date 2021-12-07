@@ -212,9 +212,7 @@ export default function Contract({ token }) {
 
     async function handleCardUpdate(contract) {
         try {
-            console.log(contract)
             const response = await updateContract({ variables: { updateContractInput: contract } })
-            console.log(response)
             if (response.data.updateContract.code != 200)
                 throw new Error()
 
