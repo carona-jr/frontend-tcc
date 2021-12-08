@@ -25,7 +25,7 @@ import { getDate } from '../../src/utils'
 import { contractStatus as status, contractColorStatus as colorStatus, contractNameStatus as nameStatus } from '../../src/utils/constants'
 
 export default function Contract({ token }) {
-    // General
+    // General    
     const router = useRouter()
     const toast = useToast()
     const [firstLoading, setFirstLoading] = useState(true)

@@ -14,7 +14,8 @@ export default function DefaultModal({
     btnCancelText = 'Não',
     modalName = 'Alerta',
     loading = false,
-    size = 'sm'
+    size = 'sm',
+    showSucessButton = true
 }) {
     return (
         <Modal isOpen={isOpen} onClose={onClose} size={size} isCentered>
@@ -29,7 +30,9 @@ export default function DefaultModal({
                     {children}
                 </ModalBody>
                 <ModalFooter>
-                    <Button colorScheme="blue" mr={3} isLoading={loading} onClick={handleSuccess}>{btnSuccessText}</Button>
+                    {
+                        showSucessButton ? <Button colorScheme="blue" mr={3} isLoading={loading} onClick={handleSuccess}>{btnSuccessText}</Button> : <></>
+                    }
                     <Button
                         variant="ghost"
                         disabled={loading}

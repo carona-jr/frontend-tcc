@@ -81,7 +81,9 @@ const GET_CONTRACT_BY_ID = gql`
                 subtitle,
                 ipfsHash,
                 ethHash,
-                createdAt
+                createdAt,
+                ownerId,
+                status
             }
         }
     }

@@ -41,26 +41,32 @@ const Text = styled.div`
     display: flex;
 `
 
-export default function ClauseCard({ card, index, handleEdit, handleDelete }) {
+export default function ClauseCard({ card, index, handleEdit, handleDelete, allowEdit }) {
     const cardRef = useRef()
 
     return (
         <Draggable draggableId={card._id} index={index}>
             {provided => (
-                <Container
+                <div
                     {...provided.draggableProps}
                     {...provided.dragHandleProps}
                     ref={provided.innerRef}
                 >
-                    <Text>
-                        <GrDrag style={{ marginRight: '6px', display: "none" }} />
-                        <div ref={cardRef}>{ReactHtmlParses(card.content)}</div>
-                    </Text>
-                    <Icons>
-                        <FaPen style={{ marginRight: '12px' }} onClick={() => handleEdit(card._id, cardRef.current.children)} />
-                        <FaTrash onClick={() => handleDelete(card._id)} />
-                    </Icons>
-                </Container>
+                    {
+                        allowEdit ?
+                            <Container>
+                                <Text>
+                                    <GrDrag style={{ marginRight: '6px', display: "none" }} />
+                                    <div ref={cardRef}>{ReactHtmlParses(card.content)}</div>
+                                </Text>
+                                <Icons>
+                                    <FaPen style={{ marginRight: '12px' }} onClick={() => handleEdit(card._id, cardRef.current.children)} />
+                                    <FaTrash onClick={() => handleDelete(card._id)} />
+                                </Icons>
+                            </Container> :
+                            <div ref={cardRef}>{ReactHtmlParses(card.content)}</div>
+                    }
+                </div>
             )}
         </Draggable>
     )
