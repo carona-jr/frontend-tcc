@@ -58,7 +58,7 @@ import {
     deserialize as htmlToObj
 } from '../../src/components/htmlEditor'
 
-export default function Contract({ token, data }) {
+export default function Contract({ token, data, querySigner }) {
     const router = useRouter()
     const user = useSelector(state => state.User)
     const client = useApolloClient()
@@ -66,7 +66,6 @@ export default function Contract({ token, data }) {
 
     // Signers
     const { isOpen: isSignerOpen, onOpen: onSignerOpen, onClose: onSignerClose } = useDisclosure()
-    const [isSignerLoading, setSignerLoading] = useState(false)
 
     // Slate
     const editor = useMemo(() => withHistory(withReact(createEditor())), [])
@@ -98,7 +97,7 @@ export default function Contract({ token, data }) {
     const { isOpen: isAddSignersOpen, onOpen: onAddSignersOpen, onClose: onAddSignersClose } = useDisclosure()
     const [signer, setSigner] = useState({ name: '', email: '', document: '' })
     const [signersMethod, setSignersMethod] = useState('CREATE')
-    const [signersList, setSignersList] = useState([{ _id: '256160', userId: '611477fcd5299b005f7ae331', name: 'carlos', email: 'carona_jr@hotmail.com', document: '1451', signerStatus: 'NOT_SIGNED', createdAt: '1638923173' }])
+    const [signersList, setSignersList] = useState([{ _id: '123', userId: '611477fcd5299b005f7ae331', name: 'carlos', email: 'carona_jr@hotmail.com', document: '1451', signerStatus: 'NOT_SIGNED', createdAt: '1638923173' }])
 
     function onDragEnd(result) {
         const { destination, source, draggableId } = result
@@ -130,10 +129,6 @@ export default function Contract({ token, data }) {
 
     function handleAddClause() {
         try {
-            // if (textClause.content == '')
-            //     return setTextAreaInvalid(true)
-
-            // setTextAreaInvalid(false)
             setAddClauseLoading(true)
 
             let data = { ...clauses }, content = ''
@@ -209,7 +204,7 @@ export default function Contract({ token, data }) {
     }
 
     function handleSign(_id, status) {
-        if (data.status != 'SENDED')
+        if ((querySigner != _id && _id) || data.status != 'SENDED')
             return
 
         if (!_id) {
@@ -242,7 +237,7 @@ export default function Contract({ token, data }) {
             </BreadcrumbLink>
         </BreadcrumbItem>
     ]
-    console.log(data)
+
     return (
         <Layout token={token} router={router} title={`Detalhe ${data.title}`} breadcrumbs={breadcrumbItens}>
             <Head>
@@ -300,11 +295,10 @@ export default function Contract({ token, data }) {
                 isOpen={isSignerOpen}
                 onClose={onSignerClose}
                 handleSuccess={() => handleSigner()}
-                loading={isSignerLoading}
                 size='sm'
-                btnCancelText='Fechar'
-                showSucessButton={false}
+                showButton={false}
             >
+                <Text textAlign="center" mb="5">Você deseja assinar este contrato?</Text>
                 <Flex justifyContent='center'>
                     <Button
                         colorScheme="whatsapp"
@@ -450,7 +444,7 @@ export default function Contract({ token, data }) {
                                                     allowEdit ? <Box fontSize="14px" cursor='pointer'>
                                                         <FaPen onClick={() => handleEditSigner(s._id)} style={{ marginBottom: '8px' }} />
                                                         <FaTrash onClick={() => handleDeleteSigner(s._id)} />
-                                                    </Box> : user._id == s.userId && data.status == 'SENDED' ? <Button
+                                                    </Box> : querySigner == s._id && data.status == 'SENDED' ? <Button
                                                         colorScheme="whatsapp"
                                                         variant="unstyled"
                                                         mr='2'
@@ -486,7 +480,10 @@ export default function Contract({ token, data }) {
 export async function getServerSideProps({ req }) {
     const cookies = cookie.parse(req.headers.cookie || '')
     const url = req.url.split('/')
-    const id = url[url.length - 1]
+    const params = url[url.length - 1].split('?')
+    const id = params[0]
+    const queryString = params[1].split('=')[1]
+    console.log(queryString)
 
     if (!cookies.token || cookies.token == 'undefined')
         return {
@@ -505,7 +502,8 @@ export async function getServerSideProps({ req }) {
     return {
         props: {
             token: cookies.token,
-            data: response.data.contract.data[0]
+            data: response.data.contract.data[0],
+            querySigner: queryString,
         }
     }
 }

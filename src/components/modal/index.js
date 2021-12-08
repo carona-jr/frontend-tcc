@@ -15,7 +15,7 @@ export default function DefaultModal({
     modalName = 'Alerta',
     loading = false,
     size = 'sm',
-    showSucessButton = true
+    showButton = true
 }) {
     return (
         <Modal isOpen={isOpen} onClose={onClose} size={size} isCentered>
@@ -31,17 +31,20 @@ export default function DefaultModal({
                 </ModalBody>
                 <ModalFooter>
                     {
-                        showSucessButton ? <Button colorScheme="blue" mr={3} isLoading={loading} onClick={handleSuccess}>{btnSuccessText}</Button> : <></>
-                    }
-                    <Button
-                        variant="ghost"
-                        disabled={loading}
-                        onClick={() => {
-                            if (handleCancel)
-                                return handleCancel()
+                        showButton ? <>
+                            <Button colorScheme="blue" mr={3} isLoading={loading} onClick={handleSuccess}>{btnSuccessText}</Button>
+                            <Button
+                                variant="ghost"
+                                disabled={loading}
+                                onClick={() => {
+                                    if (handleCancel)
+                                        return handleCancel()
 
-                            onClose()
-                        }}>{btnCancelText}</Button>
+                                    onClose()
+                                }}>{btnCancelText}
+                            </Button>
+                        </> : <></>
+                    }
                 </ModalFooter>
             </ModalContent>
         </Modal>
