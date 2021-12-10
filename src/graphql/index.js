@@ -1,6 +1,7 @@
 import { LOGIN } from './auth'
 import { USER, ME } from './user'
 import { NEW_CONTRACT, GET_ALL_CONTRACT, GET_CONTRACT_FILE, SEND_CONTRACT, UPDATE_CONTRACT, GET_ALL_CONTRACT_GROUP, GET_CONTRACT_BY_ID } from './contract'
+import { GET_FIELDS, ADD_FIELD, UPDATE_FIELD } from './field'
 
 export {
     LOGIN,
@@ -12,5 +13,8 @@ export {
     SEND_CONTRACT,
     UPDATE_CONTRACT,
     GET_ALL_CONTRACT_GROUP,
-    GET_CONTRACT_BY_ID
+    GET_CONTRACT_BY_ID,
+    GET_FIELDS,
+    ADD_FIELD,
+    UPDATE_FIELD
 }

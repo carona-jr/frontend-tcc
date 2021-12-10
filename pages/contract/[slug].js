@@ -4,9 +4,9 @@ import { useRouter } from 'next/router'
 import Head from 'next/head'
 
 // GraphQL
-import { useApolloClient } from '@apollo/client'
+import { useApolloClient, useMutation } from '@apollo/client'
 import { getApolloClient } from '../../lib/apolloNextClient'
-import { GET_CONTRACT_BY_ID } from '../../src/graphql'
+import { GET_CONTRACT_BY_ID, GET_FIELDS, ADD_FIELD, UPDATE_FIELD } from '../../src/graphql'
 
 // Icons
 import { FaSearch, FaPen, FaTrash, FaBold, FaItalic, FaUnderline, FaCode, FaHeading, FaQuoteLeft, FaListUl, FaListOl } from 'react-icons/fa'
@@ -58,11 +58,13 @@ import {
     deserialize as htmlToObj
 } from '../../src/components/htmlEditor'
 
-export default function Contract({ token, data, querySigner }) {
+export default function Contract({ token, data, querySigner, initialClauseOrder, initialClauses }) {
     const router = useRouter()
     const user = useSelector(state => state.User)
     const client = useApolloClient()
     const allowEdit = user._id == data.ownerId && (data.status == 'OPENED' || data.status == 'PENDING')
+    const [addField] = useMutation(ADD_FIELD)
+    const [updateField] = useMutation(UPDATE_FIELD)
 
     // Signers
     const { isOpen: isSignerOpen, onOpen: onSignerOpen, onClose: onSignerClose } = useDisclosure()
@@ -81,12 +83,12 @@ export default function Contract({ token, data, querySigner }) {
     const [isAddClauseLoading, setAddClauseLoading] = useState(false)
     const [clauseId, setClauseId] = useState('')
     const [clauses, setClauses] = useState({
-        cards: {},
+        cards: initialClauses,
         columns: {
             clause: {
                 id: 'clause',
                 title: 'Cláusula',
-                cardIds: []
+                cardIds: initialClauseOrder
             }
         },
         // Facilitate reordering of the columns
@@ -99,8 +101,9 @@ export default function Contract({ token, data, querySigner }) {
     const [signersMethod, setSignersMethod] = useState('CREATE')
     const [signersList, setSignersList] = useState([{ _id: '123', userId: '611477fcd5299b005f7ae331', name: 'carlos', email: 'carona_jr@hotmail.com', document: '1451', signerStatus: 'NOT_SIGNED', createdAt: '1638923173' }])
 
-    function onDragEnd(result) {
+    async function onDragEnd(result) {
         const { destination, source, draggableId } = result
+        console.log("🚀 ~ file: [slug].js ~ line 106 ~ onDragEnd ~ draggableId", draggableId)
 
         if (!destination)
             return
@@ -125,37 +128,71 @@ export default function Contract({ token, data, querySigner }) {
                 [newColumn.id]: newColumn
             }
         })
+
+        await updateField({
+            variables: {
+                fieldInput: {
+                    _id: draggableId,
+                    order: newCardIds.indexOf(draggableId) + 1,
+                    active: true
+                }
+            }
+        })
     }
 
-    function handleAddClause() {
+    async function handleAddClause() {
         try {
             setAddClauseLoading(true)
 
-            let data = { ...clauses }, content = ''
+            let list = { ...clauses }, content = ''
             value.map(x => {
                 content += objToHtml(x)
             })
 
+            // add new field
             if (clauseId == '') {
                 const _id = createObjectID()
-                data.cards = {
+                list.cards = {
                     ...clauses.cards,
                     [_id]: { _id, content }
                 }
-                data.columns = {
+                list.columns = {
                     clause: {
                         ...clauses.columns.clause,
                         cardIds: [...clauses.columns.clause.cardIds, _id]
                     }
                 }
+
+                await addField({
+                    variables: {
+                        fieldInput: {
+                            _id,
+                            order: list.columns.clause.cardIds.length,
+                            text: content,
+                            contractId: data._id,
+                            active: true
+                        }
+                    }
+                })
             } else {
-                data.cards = {
+                list.cards = {
                     ...clauses.cards,
                     [clauseId]: { _id: clauseId, content }
                 }
+
+                await updateField({
+                    variables: {
+                        fieldInput: {
+                            _id: clauseId,
+                            order: list.columns.clause.cardIds.indexOf(clauseId) + 1,
+                            text: content,
+                            active: true
+                        }
+                    }
+                })
             }
 
-            setClauses(data)
+            setClauses(list)
             setAddClauseLoading(false)
             onAddClauseClose()
         } catch (e) {
@@ -177,18 +214,27 @@ export default function Contract({ token, data, querySigner }) {
         }
     }
 
-    function handleDeleteClause(cardId) {
-        let data = { ...clauses }
+    async function handleDeleteClause(cardId) {
+        let clauseData = { ...clauses }
         delete clauses.cards[cardId]
 
-        data.columns = {
+        clauseData.columns = {
             clause: {
                 ...clauses.columns.clause,
                 cardIds: clauses.columns.clause.cardIds.filter(x => x != cardId)
             }
         }
 
-        setClauses(data)
+        setClauses(clauseData)
+
+        await updateField({
+            variables: {
+                fieldInput: {
+                    _id: cardId,
+                    active: false
+                }
+            }
+        })
     }
 
     function handleEditSigner(_id) {
@@ -482,8 +528,7 @@ export async function getServerSideProps({ req }) {
     const url = req.url.split('/')
     const params = url[url.length - 1].split('?')
     const id = params[0]
-    const queryString = params[1].split('=')[1]
-    console.log(queryString)
+    const queryString = params[1] != null ? params[1].split('=')[1] : ''
 
     if (!cookies.token || cookies.token == 'undefined')
         return {
@@ -499,11 +544,28 @@ export async function getServerSideProps({ req }) {
         variables: { _id: id }
     })
 
+    const clauses = await apollo.query({
+        query: GET_FIELDS,
+        variables: { contractId: id }
+    })
+
+    const initialClauseOrder = []
+    let initialClauses = {}
+    Array.from(clauses.data.fields.data).map(clause => {
+        initialClauseOrder.push(clause._id)
+        initialClauses[clause._id] = {
+            _id: clause._id,
+            content: clause.text
+        }
+    })
+
     return {
         props: {
             token: cookies.token,
             data: response.data.contract.data[0],
             querySigner: queryString,
+            initialClauseOrder,
+            initialClauses
         }
     }
 }
