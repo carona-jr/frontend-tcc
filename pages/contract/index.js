@@ -214,19 +214,19 @@ export default function Contract({ token }) {
         try {
             const response = await updateContract({ variables: { updateContractInput: contract } })
             if (response.data.updateContract.code != 200)
-                throw new Error()
+                throw new Error(response.data.updateContract.message)
 
             toast({
                 title: "Sucesso.",
-                description: "Contrato alterado com sucesso.",
+                description: response.data.updateContract.message,
                 status: "success",
                 duration: 3000,
                 isClosable: true
             })
-        } catch {
+        } catch (e) {
             toast({
                 title: "Erro.",
-                description: "Erro ao alterar o contrato.",
+                description: e.message,
                 status: "error",
                 duration: 3000,
                 isClosable: true
