@@ -135,7 +135,6 @@ const BlockButton = ({ format, icon }) => {
             variant="ghost"
             onClick={event => {
                 event.preventDefault()
-                console.log(format)
                 toggleBlock(editor, format)
             }}
         >

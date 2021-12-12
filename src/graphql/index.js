@@ -210,6 +210,28 @@ const SEND_CONTRACT = gql`
     }
 `
 
+const ADD_CLAUSE = gql`
+    mutation addField ($fieldInput: FieldInput) {
+        addField(fieldInput: $fieldInput) {
+            code
+        }
+    }
+`
+
+const GET_CLAUSES = gql`
+    query fields($contractId: ID!) {
+        fields (contractId: $contractId) {
+            code
+            status
+            message
+            data {
+                _id
+                text
+            }
+        }
+    }
+`
+
 export {
     LOGIN,
     USER,
@@ -220,5 +242,7 @@ export {
     SEND_CONTRACT,
     UPDATE_CONTRACT,
     GET_ALL_CONTRACT_GROUP,
-    GET_CONTRACT_BY_ID
+    GET_CONTRACT_BY_ID,
+    GET_CLAUSES,
+    ADD_CLAUSE
 }
