@@ -29,10 +29,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between'
     },
-    signer: {
-        borderTop: '1px solid black',
+    signerContainer: {
         width: '45%',
         marginTop: '24px'
+    },
+    signer: {
+        borderTop: '1px solid black'
     },
     signerInfo: {
         paddingVertical: '2px',
@@ -59,10 +61,15 @@ export default function ContractPDF({ contract, clauses, order, signers }) {
                 </View>
                 <View style={styles.signers}>
                     {signers.map(s => (
-                        <View key={s._id} style={styles.signer}>
-                            <Text style={styles.signerName}>{s.name}</Text>
-                            <Text style={styles.signerInfo}>E-mail: {s.email}</Text>
-                            <Text style={styles.signerInfo}>Documento: {s.document}</Text>
+                        <View key={s._id} style={styles.signerContainer}>
+                            {
+                                s.signerStatus == 'SIGNED' ? <Text>Assinado digitalmente</Text> : s.signerStatus == 'REFUSED' ? <Text>Recusado</Text> : <></>
+                            }
+                            <View style={styles.signer}>
+                                <Text style={styles.signerName}>{s.name}</Text>
+                                <Text style={styles.signerInfo}>E-mail: {s.email}</Text>
+                                <Text style={styles.signerInfo}>Documento: {s.document}</Text>
+                            </View>
                         </View>
                     ))}
                 </View>

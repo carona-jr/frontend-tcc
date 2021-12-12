@@ -4,9 +4,9 @@ import { useRouter } from 'next/router'
 import Head from 'next/head'
 
 // GraphQL
-import { useApolloClient } from '@apollo/client'
+import { useApolloClient, useMutation } from '@apollo/client'
 import { getApolloClient } from '../../lib/apolloNextClient'
-import { GET_CONTRACT_BY_ID } from '../../src/graphql'
+import { GET_CONTRACT_BY_ID, GET_FIELDS, ADD_FIELD, UPDATE_FIELD } from '../../src/graphql'
 
 // Icons
 import { FaSearch, FaPen, FaTrash, FaBold, FaItalic, FaUnderline, FaCode, FaHeading, FaQuoteLeft, FaListUl, FaListOl } from 'react-icons/fa'
@@ -19,6 +19,7 @@ import { withHistory } from 'slate-history'
 
 // Others
 import cookie from 'cookie'
+import { useSelector } from 'react-redux'
 import { pdf } from '@react-pdf/renderer'
 import { DragDropContext } from 'react-beautiful-dnd'
 import { createObjectID } from 'mongo-object-reader'
@@ -36,6 +37,7 @@ import {
     Box
 } from '@chakra-ui/react'
 import isHotkey from 'is-hotkey'
+import { signerColorStatus } from '../../src/utils/constants'
 
 // Components
 import dynamic from 'next/dynamic'
@@ -56,9 +58,16 @@ import {
     deserialize as htmlToObj
 } from '../../src/components/htmlEditor'
 
-export default function Contract({ token, data }) {
+export default function Contract({ token, data, querySigner, initialClauseOrder, initialClauses }) {
     const router = useRouter()
+    const user = useSelector(state => state.User)
     const client = useApolloClient()
+    const allowEdit = user._id == data.ownerId && (data.status == 'OPENED' || data.status == 'PENDING')
+    const [addField] = useMutation(ADD_FIELD)
+    const [updateField] = useMutation(UPDATE_FIELD)
+
+    // Signers
+    const { isOpen: isSignerOpen, onOpen: onSignerOpen, onClose: onSignerClose } = useDisclosure()
 
     // Slate
     const editor = useMemo(() => withHistory(withReact(createEditor())), [])
@@ -72,29 +81,29 @@ export default function Contract({ token, data }) {
     // Clauses
     const { isOpen: isAddClauseOpen, onOpen: onAddClauseOpen, onClose: onAddClauseClose } = useDisclosure()
     const [isAddClauseLoading, setAddClauseLoading] = useState(false)
-    const [textAreaInvalid, setTextAreaInvalid] = useState(false)
     const [clauseId, setClauseId] = useState('')
     const [clauses, setClauses] = useState({
-        cards: {},
+        cards: initialClauses,
         columns: {
             clause: {
                 id: 'clause',
                 title: 'Cláusula',
-                cardIds: []
+                cardIds: initialClauseOrder
             }
         },
         // Facilitate reordering of the columns
         columnOrder: ['clause']
     })
 
-    // Related Users
+    // Signers List
     const { isOpen: isAddSignersOpen, onOpen: onAddSignersOpen, onClose: onAddSignersClose } = useDisclosure()
     const [signer, setSigner] = useState({ name: '', email: '', document: '' })
     const [signersMethod, setSignersMethod] = useState('CREATE')
-    const [signersList, setSignersList] = useState([{ _id: '256160', name: 'carlos', email: 'carona_jr@hotmail.com', document: '1451', signerStatus: 'pending' }])
+    const [signersList, setSignersList] = useState([{ _id: '123', userId: '611477fcd5299b005f7ae331', name: 'carlos', email: 'carona_jr@hotmail.com', document: '1451', signerStatus: 'NOT_SIGNED', createdAt: '1638923173' }])
 
-    function onDragEnd(result) {
+    async function onDragEnd(result) {
         const { destination, source, draggableId } = result
+        console.log("🚀 ~ file: [slug].js ~ line 106 ~ onDragEnd ~ draggableId", draggableId)
 
         if (!destination)
             return
@@ -119,41 +128,71 @@ export default function Contract({ token, data }) {
                 [newColumn.id]: newColumn
             }
         })
+
+        await updateField({
+            variables: {
+                fieldInput: {
+                    _id: draggableId,
+                    order: newCardIds.indexOf(draggableId) + 1,
+                    active: true
+                }
+            }
+        })
     }
 
-    function handleAddClause() {
+    async function handleAddClause() {
         try {
-            // if (textClause.content == '')
-            //     return setTextAreaInvalid(true)
-
-            // setTextAreaInvalid(false)
             setAddClauseLoading(true)
 
-            let data = { ...clauses }, content = ''
+            let list = { ...clauses }, content = ''
             value.map(x => {
                 content += objToHtml(x)
             })
 
+            // add new field
             if (clauseId == '') {
                 const _id = createObjectID()
-                data.cards = {
+                list.cards = {
                     ...clauses.cards,
                     [_id]: { _id, content }
                 }
-                data.columns = {
+                list.columns = {
                     clause: {
                         ...clauses.columns.clause,
                         cardIds: [...clauses.columns.clause.cardIds, _id]
                     }
                 }
+
+                await addField({
+                    variables: {
+                        fieldInput: {
+                            _id,
+                            order: list.columns.clause.cardIds.length,
+                            text: content,
+                            contractId: data._id,
+                            active: true
+                        }
+                    }
+                })
             } else {
-                data.cards = {
+                list.cards = {
                     ...clauses.cards,
                     [clauseId]: { _id: clauseId, content }
                 }
+
+                await updateField({
+                    variables: {
+                        fieldInput: {
+                            _id: clauseId,
+                            order: list.columns.clause.cardIds.indexOf(clauseId) + 1,
+                            text: content,
+                            active: true
+                        }
+                    }
+                })
             }
 
-            setClauses(data)
+            setClauses(list)
             setAddClauseLoading(false)
             onAddClauseClose()
         } catch (e) {
@@ -175,18 +214,27 @@ export default function Contract({ token, data }) {
         }
     }
 
-    function handleDeleteClause(cardId) {
-        let data = { ...clauses }
+    async function handleDeleteClause(cardId) {
+        let clauseData = { ...clauses }
         delete clauses.cards[cardId]
 
-        data.columns = {
+        clauseData.columns = {
             clause: {
                 ...clauses.columns.clause,
                 cardIds: clauses.columns.clause.cardIds.filter(x => x != cardId)
             }
         }
 
-        setClauses(data)
+        setClauses(clauseData)
+
+        await updateField({
+            variables: {
+                fieldInput: {
+                    _id: cardId,
+                    active: false
+                }
+            }
+        })
     }
 
     function handleEditSigner(_id) {
@@ -199,6 +247,22 @@ export default function Contract({ token, data }) {
     function handleDeleteSigner(_id) {
         const list = signersList.filter(x => x._id != _id)
         setSignersList(list)
+    }
+
+    function handleSign(_id, status) {
+        if ((querySigner != _id && _id) || data.status != 'SENDED')
+            return
+
+        if (!_id) {
+            const s = signersList.find(x => x._id == signer._id)
+            s.signerStatus = status
+            setSigner(s)
+            return onSignerClose()
+        }
+
+        const s = signersList.find(x => x._id == _id)
+        setSigner(s)
+        onSignerOpen()
     }
 
     const breadcrumbItens = [
@@ -225,6 +289,7 @@ export default function Contract({ token, data }) {
             <Head>
                 <title>Contrato - Detalhe</title>
             </Head>
+
             <DefaultModal
                 modalName="Cláusula"
                 isOpen={isAddClauseOpen}
@@ -244,10 +309,10 @@ export default function Contract({ token, data }) {
                         <MarkButton format="bold" icon={<FaBold />} />
                         <MarkButton format="italic" icon={<FaItalic />} />
                         <MarkButton format="underline" icon={<FaUnderline />} />
-                        <MarkButton format="code" icon={<FaCode />} />
+                        {/* <MarkButton format="code" icon={<FaCode />} /> */}
                         <BlockButton format="heading-one" icon={<FaHeading />} />
                         <BlockButton format="heading-two" icon={<FaHeading />} />
-                        <BlockButton format="block-quote" icon={<FaQuoteLeft />} />
+                        {/* <BlockButton format="block-quote" icon={<FaQuoteLeft />} /> */}
                         <BlockButton format="numbered-list" icon={<FaListOl />} />
                         <BlockButton format="bulleted-list" icon={<FaListUl />} />
                     </Box>
@@ -271,6 +336,39 @@ export default function Contract({ token, data }) {
                 </Slate>
             </DefaultModal>
 
+            <DefaultModal
+                modalName="Assinatura"
+                isOpen={isSignerOpen}
+                onClose={onSignerClose}
+                handleSuccess={() => handleSigner()}
+                size='sm'
+                showButton={false}
+            >
+                <Text textAlign="center" mb="5">Você deseja assinar este contrato?</Text>
+                <Flex justifyContent='center'>
+                    <Button
+                        colorScheme="whatsapp"
+                        variant="ghost"
+                        mr='5'
+                        onClick={() => {
+                            handleSign(null, 'SIGNED')
+                        }}
+                    >
+                        Assinar
+                    </Button>
+                    <Button
+                        colorScheme="red"
+                        variant="ghost"
+                        mr='5'
+                        onClick={() => {
+                            handleSign(null, 'REFUSED')
+                        }}
+                    >
+                        Recusar
+                    </Button>
+                </Flex>
+            </DefaultModal>
+
             <Signers
                 isOpen={isAddSignersOpen}
                 onClose={onAddSignersClose}
@@ -286,7 +384,12 @@ export default function Contract({ token, data }) {
                     variant="outline"
                     mr='5'
                     onClick={async () => {
-                        const blob = await pdf(ContractPDF({ contract: data, clauses: clauses.cards, order: clauses.columns.clause.cardIds, signers: signersList })).toString()
+                        const blob = await pdf(ContractPDF({
+                            contract: data,
+                            clauses: clauses.cards,
+                            order: clauses.columns.clause.cardIds,
+                            signers: signersList
+                        })).toString()
                         const base64 = Buffer.from(blob).toString('base64')
 
                         const newTab = window.open("", "_blank")
@@ -303,55 +406,73 @@ export default function Contract({ token, data }) {
                 >
                     PDF
                 </Button>
-                <Button
-                    colorScheme="facebook"
-                    variant="outline"
-                    mr='5'
-                    onClick={() => {
-                        setSigner({ name: '', email: '', document: '' })
-                        setSignersMethod('CREATE')
-                        onAddSignersOpen()
-                    }}
-                >
-                    Nova Parte
-                </Button>
-                <Button
-                    colorScheme="linkedin"
-                    variant="outline"
-                    onClick={() => {
-                        setValue([{
-                            type: 'paragraph',
-                            children: [{ text: '' }]
-                        }])
-                        setClauseId('')
-                        onAddClauseOpen()
-                    }}
-                >
-                    Nova Cláusula
-                </Button>
+                {
+                    allowEdit ? <Button
+                        colorScheme="facebook"
+                        variant="outline"
+                        mr='5'
+                        onClick={() => {
+                            setSigner({ name: '', email: '', document: '' })
+                            setSignersMethod('CREATE')
+                            onAddSignersOpen()
+                        }}
+                    >
+                        Nova Assinatura
+                    </Button> : <></>
+                }
+                {
+                    allowEdit ? <Button
+                        colorScheme="linkedin"
+                        variant="outline"
+                        onClick={() => {
+                            setValue([{
+                                type: 'paragraph',
+                                children: [{ text: '' }]
+                            }])
+                            setClauseId('')
+                            onAddClauseOpen()
+                        }}
+                    >
+                        Nova Cláusula
+                    </Button> : <></>
+                }
             </Flex>
 
-            <Box mb="5">
-                <Text fontSize="16px" mb="3" textTransform="uppercase">Cláusulas</Text>
+            <Box mb="10" mx="6">
+                <Text fontSize="16px" mb="6" textTransform="uppercase">Cláusulas</Text>
                 {clauses.columns.clause.cardIds.length == 0 ? <Text color='rgba(0, 0, 0, 0.5)'>Não foi adicionada nenhuma cláusula</Text> : <></>}
                 <DragDropContext onDragEnd={onDragEnd}>
                     {clauses.columnOrder.map(columnId => {
                         const column = clauses.columns[columnId]
                         const cards = column.cardIds.map(_id => clauses.cards[_id])
-
-                        return <ClauseColumn key={column.id} column={column} cards={cards} handleEdit={handleEditClause} handleDelete={handleDeleteClause} />
+                        return <ClauseColumn
+                            key={column.id}
+                            column={column}
+                            cards={cards}
+                            handleEdit={handleEditClause}
+                            handleDelete={handleDeleteClause}
+                            allowEdit={allowEdit}
+                        />
                     })}
                 </DragDropContext>
             </Box>
 
-            <Box mb="5">
+            <Box mb="5" mx="6">
                 <Text fontSize="16px" mb="3" textTransform="uppercase">Assinaturas</Text>
                 {signersList.length == 0 ? <Text color='rgba(0, 0, 0, 0.5)'>Não foi adicionada nenhuma assinatura</Text> : <></>}
                 <Grid templateColumns="repeat(12, 1fr)" gap={2}>
                     {
                         signersList.map(s => {
                             return (
-                                <GridItem key={s._id} colSpan="3" p="2" border="1px solid rgba(0, 0, 0, 0.1)">
+                                <GridItem
+                                    key={s._id}
+                                    colSpan="3"
+                                    p="2"
+                                    border="1px solid rgba(0, 0, 0, 0.1)"
+                                    borderRadius="4"
+                                    _hover={{ cursor: 'pointer', backgroundColor: 'rgba(0, 0, 0, 0.05)' }}
+                                    onClick={() => handleSign(s._id)}
+                                >
                                     <Box
                                         as="related-users"
                                         maxW="sm"
@@ -365,10 +486,18 @@ export default function Contract({ token, data }) {
                                         <Heading size="md" my="2">
                                             <Flex justifyContent="space-between" alignItems='center'>
                                                 <Text>{s.name}</Text>
-                                                <Box fontSize="14px" cursor='pointer'>
-                                                    <FaPen onClick={() => handleEditSigner(s._id)} style={{ marginBottom: '8px' }} />
-                                                    <FaTrash onClick={() => handleDeleteSigner(s._id)} />
-                                                </Box>
+                                                {
+                                                    allowEdit ? <Box fontSize="14px" cursor='pointer'>
+                                                        <FaPen onClick={() => handleEditSigner(s._id)} style={{ marginBottom: '8px' }} />
+                                                        <FaTrash onClick={() => handleDeleteSigner(s._id)} />
+                                                    </Box> : querySigner == s._id && data.status == 'SENDED' ? <Button
+                                                        colorScheme="whatsapp"
+                                                        variant="unstyled"
+                                                        mr='2'
+                                                    >
+                                                        Assinar
+                                                    </Button> : <></>
+                                                }
                                             </Flex>
                                         </Heading>
                                         <Box mb="2">
@@ -377,7 +506,11 @@ export default function Contract({ token, data }) {
                                         </Box>
                                         <Flex direction='row' fontSize="12px" justifyContent='space-between'>
                                             <Text>{getDate(s.createdAt)}</Text>
-                                            <Badge colorScheme='yellow' lineHeight='24px'>{s.signerStatus}</Badge>
+                                            <Badge
+                                                color={signerColorStatus[`CO_${s.signerStatus}`]}
+                                                backgroundColor={signerColorStatus[`BG_${s.signerStatus}`]}
+                                                lineHeight='24px'>{s.signerStatus}
+                                            </Badge>
                                         </Flex>
                                     </Box>
                                 </GridItem>
@@ -386,7 +519,6 @@ export default function Contract({ token, data }) {
                     }
                 </Grid>
             </Box>
-
         </Layout>
     )
 }
@@ -394,7 +526,9 @@ export default function Contract({ token, data }) {
 export async function getServerSideProps({ req }) {
     const cookies = cookie.parse(req.headers.cookie || '')
     const url = req.url.split('/')
-    const id = url[url.length - 1]
+    const params = url[url.length - 1].split('?')
+    const id = params[0]
+    const queryString = params[1] != null ? params[1].split('=')[1] : ''
 
     if (!cookies.token || cookies.token == 'undefined')
         return {
@@ -410,10 +544,28 @@ export async function getServerSideProps({ req }) {
         variables: { _id: id }
     })
 
+    const clauses = await apollo.query({
+        query: GET_FIELDS,
+        variables: { contractId: id }
+    })
+
+    const initialClauseOrder = []
+    let initialClauses = {}
+    Array.from(clauses.data.fields.data).map(clause => {
+        initialClauseOrder.push(clause._id)
+        initialClauses[clause._id] = {
+            _id: clause._id,
+            content: clause.text
+        }
+    })
+
     return {
         props: {
             token: cookies.token,
-            data: response.data.contract.data[0]
+            data: response.data.contract.data[0],
+            querySigner: queryString,
+            initialClauseOrder,
+            initialClauses
         }
     }
 }

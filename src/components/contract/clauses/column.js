@@ -2,7 +2,7 @@ import { Droppable } from 'react-beautiful-dnd'
 import ClauseCard from './card'
 import { Box } from '@chakra-ui/react'
 
-export default function ClauseColumn({ column, cards, handleEdit, handleDelete }) {
+export default function ClauseColumn({ column, cards, handleEdit, handleDelete, allowEdit }) {
     return (
         <Box>
             {/* <Box>{column.title}</Box> */}
@@ -10,7 +10,14 @@ export default function ClauseColumn({ column, cards, handleEdit, handleDelete }
                 {provided => (
                     <Box ref={provided.innerRef} {...provided.droppableProps}>
                         {cards.map((card, index) => (
-                            <ClauseCard key={card._id} card={card} index={index} handleEdit={handleEdit} handleDelete={handleDelete} />
+                            <ClauseCard
+                                key={card._id}
+                                card={card}
+                                index={index}
+                                handleEdit={handleEdit}
+                                handleDelete={handleDelete}
+                                allowEdit={allowEdit}
+                            />
                         ))}
                         {provided.placeholder}
                     </Box>
