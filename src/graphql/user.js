@@ -71,7 +71,50 @@ const USER = gql`
     }
 `
 
+const FIND_USERS = gql`
+    query findUsers($userInputs: UserInputs) {
+        findUsers(userInputs:$userInputs) {
+        status
+        code
+        message
+        total
+        data {
+            _id
+            name
+            email
+            type
+            document
+            address {
+                _id
+                street
+                number
+                zipcode
+                neighborhood
+                complement
+                type
+                createdAt
+                updatedAt
+                active
+            }
+            phone {
+                _id
+                phone
+                type
+                active
+                createdAt
+                updatedAt
+            }
+            supervised {
+                _id
+            }
+            active
+        }
+        }
+    }
+`
+
 export {
     ME,
-    USER
+    USER,
+    FIND_USERS
 }

@@ -30,6 +30,7 @@
     "react-html-parser": "^2.0.2",
     "react-icons": "^4.2.0",
     "react-redux": "^7.2.4",
+    "react-table": "^7.7.0",
     "react-trello": "^2.2.11",
     "slate": "^0.70.0",
     "slate-history": "^0.66.0",
