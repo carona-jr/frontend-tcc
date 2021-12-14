@@ -19,7 +19,7 @@ import { Formik, Form, Field } from 'formik'
 import { useMutation } from '@apollo/client'
 import { NEW_CONTRACT, UPDATE_CONTRACT } from '../../../graphql'
 
-export default function ContractForm({ isOpen, onClose, getContracts, data, method }) {
+export default function ContractForm({ isOpen, onClose, data, method, setData = (data) => { }, getContracts = () => { } }) {
     const formRef = useRef()
     const toast = useToast()
     const user = useSelector(state => state.User)
@@ -70,6 +70,8 @@ export default function ContractForm({ isOpen, onClose, getContracts, data, meth
                                         throw new Error()
                                 } else {
                                     const response = await updateContract({ variables: { updateContractInput: { ...values } } })
+
+                                    setData({ ...data, ...values })
 
                                     if (response.data.updateContract.code != 200)
                                         throw new Error()
@@ -125,7 +127,6 @@ export default function ContractForm({ isOpen, onClose, getContracts, data, meth
                     <Button colorScheme="blue" mr={3} onClick={handleSubmitContract} isLoading={savingContract}>
                         Salvar
                     </Button>
-                    <Button variant="ghost" onClick={() => window.open(`/contract/${data.id}`, '_blank')} d={method == 'CREATE' ? 'none' : 'block'}>Detalhe</Button>
                     <Button variant="ghost" onClick={onClose} disabled={savingContract}>Cancelar</Button>
                 </ModalFooter>
             </ModalContent>
