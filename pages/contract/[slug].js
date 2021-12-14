@@ -106,11 +106,7 @@ export default function Contract({ token, data, querySigner, initialClauseOrder,
     const { isOpen: isAddSignersOpen, onOpen: onAddSignersOpen, onClose: onAddSignersClose } = useDisclosure()
     const [signer, setSigner] = useState({ name: '', email: '', document: '' })
     const [signersMethod, setSignersMethod] = useState('CREATE')
-<<<<<<< HEAD
     const [signersList, setSignersList] = useState(data.signers)
-=======
-    const [signersList, setSignersList] = useState([])
->>>>>>> 15bf0ba8c4356081c0c586b3adbb0c1eb91398ab
 
     //[{ _id: '123', userId: '611477fcd5299b005f7ae331', name: 'carlos', email: 'carona_jr@hotmail.com', document: '1451', signerStatus: 'NOT_SIGNED', createdAt: '1638923173' }]
     async function onDragEnd(result) {
