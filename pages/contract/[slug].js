@@ -59,6 +59,7 @@ import {
 } from '../../src/components/htmlEditor'
 
 export default function Contract({ token, data, querySigner, initialClauseOrder, initialClauses }) {
+
     const router = useRouter()
     const user = useSelector(state => state.User)
     const client = useApolloClient()
@@ -99,11 +100,11 @@ export default function Contract({ token, data, querySigner, initialClauseOrder,
     const { isOpen: isAddSignersOpen, onOpen: onAddSignersOpen, onClose: onAddSignersClose } = useDisclosure()
     const [signer, setSigner] = useState({ name: '', email: '', document: '' })
     const [signersMethod, setSignersMethod] = useState('CREATE')
-    const [signersList, setSignersList] = useState([{ _id: '123', userId: '611477fcd5299b005f7ae331', name: 'carlos', email: 'carona_jr@hotmail.com', document: '1451', signerStatus: 'NOT_SIGNED', createdAt: '1638923173' }])
+    const [signersList, setSignersList] = useState(data.signers)
 
+    //[{ _id: '123', userId: '611477fcd5299b005f7ae331', name: 'carlos', email: 'carona_jr@hotmail.com', document: '1451', signerStatus: 'NOT_SIGNED', createdAt: '1638923173' }]
     async function onDragEnd(result) {
         const { destination, source, draggableId } = result
-        console.log("🚀 ~ file: [slug].js ~ line 106 ~ onDragEnd ~ draggableId", draggableId)
 
         if (!destination)
             return
@@ -465,7 +466,7 @@ export default function Contract({ token, data, querySigner, initialClauseOrder,
                         signersList.map(s => {
                             return (
                                 <GridItem
-                                    key={s._id}
+                                    key={s.name}
                                     colSpan="3"
                                     p="2"
                                     border="1px solid rgba(0, 0, 0, 0.1)"

@@ -18,13 +18,16 @@ import { useState, useRef } from 'react'
 import { Formik, Form, Field } from 'formik'
 import { createObjectID } from 'mongo-object-reader'
 import { useMutation } from '@apollo/client'
-import { NEW_CONTRACT, UPDATE_CONTRACT } from '../../../graphql'
+import { NEW_SIGNER, UPDATE_CONTRACT } from '../../../graphql'
+import { useRouter } from 'next/router'
 
 export default function Signers({ isOpen, onClose, data, method, list, setList }) {
+
     const formRef = useRef()
+    const { query: { slug } } = useRouter()
     const toast = useToast()
     const user = useSelector(state => state.User)
-    // const [addContract] = useMutation(NEW_CONTRACT)
+    const [addSigner] = useMutation(NEW_SIGNER)
     // const [updateContract] = useMutation(UPDATE_CONTRACT)
     const [saving, setSaving] = useState(false)
 
@@ -56,20 +59,21 @@ export default function Signers({ isOpen, onClose, data, method, list, setList }
                             try {
                                 setSaving(true)
 
-                                // if (method == 'CREATE') {
-                                //     const response = await addContract({
-                                //         variables: {
-                                //             contractInput: {
-                                //                 ...values,
-                                //                 ownerId: user._id,
-                                //                 status: 'OPENED'
-                                //             }
-                                //         }
-                                //     })
+                                if (method == 'CREATE') {
+                                    const response = await addSigner({
+                                        variables: {
+                                            signerInput: {
+                                                contractId: slug,
+                                                ...values
+                                            }
+                                        }
+                                    })
+                                    console.log("🚀 ~ file: signers.js ~ line 71 ~ onSubmit={ ~ response", response)
 
-                                //     if (response.data.createContract.code != 200)
-                                //         throw new Error()
-                                // } else {
+                                    if (response.data.setSigner.code != 200)
+                                        throw new Error()
+                                }
+                                // else {
                                 //     const response = await updateContract({ variables: { updateContractInput: { ...values } } })
 
                                 //     if (response.data.updateContract.code != 200)
