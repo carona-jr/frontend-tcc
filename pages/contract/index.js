@@ -34,7 +34,7 @@ export default function Contract({ token }) {
     // Contract
     const { isOpen: isAddOpen, onOpen: onAddOpen, onClose: onAddClose } = useDisclosure()
     const [formData, setFormData] = useState({ title: '', subtitle: '' })
-    const [formMethod, setFormMethod] = useState('CREATE')
+    const [formMethod] = useState('CREATE')
     const [updateContract] = useMutation(UPDATE_CONTRACT)
     const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure()
     const [deleteCallback, setDeleteCallback] = useState(null)
@@ -236,18 +236,6 @@ export default function Contract({ token }) {
         }
     }
 
-    function handleClick(cardId, laneId) {
-        try {
-            const cards = data.lanes.find(x => x.id == laneId).cards
-            const card = cards.find(x => x.id == cardId)
-            setFormMethod('UPDATE')
-            setFormData({ title: card.title, subtitle: card.subtitle, id: card.id })
-            onAddOpen()
-        } catch (e) {
-            console.log(e)
-        }
-    }
-
     function handleChangeStatus(cardId, sourceLaneId, targetLaneId) {
         handleCardUpdate({
             id: cardId,
@@ -309,7 +297,6 @@ export default function Contract({ token }) {
                     variant="outline"
                     onClick={() => {
                         setFormData({ title: '', subtitle: '' })
-                        setFormMethod('CREATE')
                         onAddOpen()
                     }}
                 >
@@ -322,7 +309,7 @@ export default function Contract({ token }) {
                 laneStyle={{ width: '24.5%', maxHeight: '70vh' }}
                 onBeforeCardDelete={callback => { handleDelete(callback, false) }}
                 onCardDelete={cardId => { handleApiDelete(cardId) }}
-                onCardClick={(cardId, metadata, laneId) => handleClick(cardId, laneId)}
+                onCardClick={(cardId, metadata, laneId) => window.open(`/contract/${cardId}`, '_blank')}
                 handleDragEnd={(cardId, sourceLaneId, targetLaneId, position, cardDetails) => handleChangeStatus(cardId, sourceLaneId, targetLaneId, position, cardDetails)}
                 onLaneScroll={(requestedPage, laneId) => handleScroll(requestedPage, laneId)}
 

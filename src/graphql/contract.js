@@ -43,6 +43,7 @@ const GET_ALL_CONTRACT = gql`
                 ipfsHash
                 ethHash
                 createdAt
+
                 status
             }
         }
@@ -81,6 +82,14 @@ const GET_CONTRACT_BY_ID = gql`
                 subtitle,
                 ipfsHash,
                 ethHash,
+                signers {
+                    name,
+                    email,
+                    document,
+                    signerStatus,
+                    createdAt,
+                    updatedAt
+                },
                 createdAt,
                 ownerId,
                 status
@@ -101,6 +110,24 @@ const SEND_CONTRACT = gql`
     }
 `
 
+const NEW_SIGNER = gql`
+    mutation newSigner($signerInput: SignerInput!) {
+        setSigner(signerInput: $signerInput) {
+            code
+            data {
+                signers {
+                    name,
+                    email,
+                    document,
+                    signerStatus,
+                    createdAt,
+                    updatedAt
+                }
+            }
+        }
+    }
+`
+
 export {
     NEW_CONTRACT,
     UPDATE_CONTRACT,
@@ -108,5 +135,6 @@ export {
     GET_ALL_CONTRACT_GROUP,
     GET_CONTRACT_BY_ID,
     GET_CONTRACT_FILE,
-    SEND_CONTRACT
+    SEND_CONTRACT,
+    NEW_SIGNER
 }

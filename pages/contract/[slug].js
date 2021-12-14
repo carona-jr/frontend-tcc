@@ -47,6 +47,7 @@ import DefaultModal from '../../src/components/modal'
 import Signers from '../../src/components/contract/forms/signers'
 import ClauseColumn from '../../src/components/contract/clauses/column'
 import { getDate } from '../../src/utils'
+import ContractForm from '../../src/components/contract/forms/contract'
 import {
     HOTKEYS,
     Element,
@@ -59,12 +60,18 @@ import {
 } from '../../src/components/htmlEditor'
 
 export default function Contract({ token, data, querySigner, initialClauseOrder, initialClauses }) {
+
     const router = useRouter()
     const user = useSelector(state => state.User)
     const client = useApolloClient()
     const allowEdit = user._id == data.ownerId && (data.status == 'OPENED' || data.status == 'PENDING')
     const [addField] = useMutation(ADD_FIELD)
     const [updateField] = useMutation(UPDATE_FIELD)
+
+    // Edit
+    const { isOpen: isAddOpen, onOpen: onAddOpen, onClose: onAddClose } = useDisclosure()
+    const [formData, setFormData] = useState({ title: data.title, subtitle: data.subtitle, id: data._id })
+    const [formMethod] = useState('UPDATE')
 
     // Signers
     const { isOpen: isSignerOpen, onOpen: onSignerOpen, onClose: onSignerClose } = useDisclosure()
@@ -99,11 +106,11 @@ export default function Contract({ token, data, querySigner, initialClauseOrder,
     const { isOpen: isAddSignersOpen, onOpen: onAddSignersOpen, onClose: onAddSignersClose } = useDisclosure()
     const [signer, setSigner] = useState({ name: '', email: '', document: '' })
     const [signersMethod, setSignersMethod] = useState('CREATE')
-    const [signersList, setSignersList] = useState([{ _id: '123', userId: '611477fcd5299b005f7ae331', name: 'carlos', email: 'carona_jr@hotmail.com', document: '1451', signerStatus: 'NOT_SIGNED', createdAt: '1638923173' }])
+    const [signersList, setSignersList] = useState(data.signers)
 
+    //[{ _id: '123', userId: '611477fcd5299b005f7ae331', name: 'carlos', email: 'carona_jr@hotmail.com', document: '1451', signerStatus: 'NOT_SIGNED', createdAt: '1638923173' }]
     async function onDragEnd(result) {
         const { destination, source, draggableId } = result
-        console.log("🚀 ~ file: [slug].js ~ line 106 ~ onDragEnd ~ draggableId", draggableId)
 
         if (!destination)
             return
@@ -278,18 +285,26 @@ export default function Contract({ token, data, querySigner, initialClauseOrder,
             <BreadcrumbLink href="#">
                 <Flex alignItems="center">
                     <FaSearch className='breadcrumb-item' />
-                    <Text display={['none', 'inline']} pl="2">{`Detalhe ${data.title}`}</Text>
+                    <Text display={['none', 'inline']} pl="2">{`Detalhe ${formData.title}`}</Text>
                 </Flex>
             </BreadcrumbLink>
         </BreadcrumbItem>
     ]
 
     return (
-        <Layout token={token} router={router} title={`Detalhe ${data.title}`} breadcrumbs={breadcrumbItens}>
+        <Layout token={token} router={router} title={`Detalhe ${formData.title}`} breadcrumbs={breadcrumbItens}>
             <Head>
                 <title>Contrato - Detalhe</title>
             </Head>
 
+            <ContractForm
+                isOpen={isAddOpen}
+                onClose={onAddClose}
+                data={formData}
+                setData={setFormData}
+                method={formMethod}
+                router={router}
+            />
             <DefaultModal
                 modalName="Cláusula"
                 isOpen={isAddClauseOpen}
@@ -424,6 +439,7 @@ export default function Contract({ token, data, querySigner, initialClauseOrder,
                     allowEdit ? <Button
                         colorScheme="linkedin"
                         variant="outline"
+                        mr='5'
                         onClick={() => {
                             setValue([{
                                 type: 'paragraph',
@@ -436,6 +452,15 @@ export default function Contract({ token, data, querySigner, initialClauseOrder,
                         Nova Cláusula
                     </Button> : <></>
                 }
+                <Button
+                    colorScheme="linkedin"
+                    variant="outline"
+                    onClick={() => {
+                        onAddOpen()
+                    }}
+                >
+                    Editar Contrato
+                </Button>
             </Flex>
 
             <Box mb="10" mx="6">
@@ -465,7 +490,7 @@ export default function Contract({ token, data, querySigner, initialClauseOrder,
                         signersList.map(s => {
                             return (
                                 <GridItem
-                                    key={s._id}
+                                    key={s.name}
                                     colSpan="3"
                                     p="2"
                                     border="1px solid rgba(0, 0, 0, 0.1)"
