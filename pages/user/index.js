@@ -1,12 +1,12 @@
 // React
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useRef, useMemo } from 'react'
 import { useRouter } from 'next/router'
 import Head from 'next/head'
 
 // GraphQL
 import { useApolloClient, useMutation } from '@apollo/client'
 import { getApolloClient } from '../../lib/apolloNextClient'
-import { FIND_USERS } from '../../src/graphql'
+import { FIND_USERS, CREATE_USER } from '../../src/graphql'
 
 // Icons
 import { FaUser } from 'react-icons/fa'
@@ -19,8 +19,10 @@ import { Button, Flex, useDisclosure, BreadcrumbItem, BreadcrumbLink, Text, useT
 import dynamic from 'next/dynamic'
 const Layout = dynamic(() => import('../../src/layout'))
 import TableList from '../../src/components/list/table'
+import UserForm from '../../src/components/user/forms'
 
 export default function User({ token, initialData, initialConfig }) {
+    const toast = useToast()
     const router = useRouter()
 
     const [tableData, setTableData] = useState(initialData.data)
@@ -37,6 +39,14 @@ export default function User({ token, initialData, initialConfig }) {
                 accessor: 'email'
             },
             {
+                Header: 'tipo',
+                accessor: 'type'
+            },
+            {
+                Header: 'documento',
+                accessor: 'document'
+            },
+            {
                 Header: '',
                 accessor: '_id'
             }
@@ -44,6 +54,46 @@ export default function User({ token, initialData, initialConfig }) {
         []
     )
     const data = useMemo(() => tableData, [tableData])
+
+    const { isOpen: isModalOpen, onOpen: onModalOpen, onClose: onModalClose } = useDisclosure()
+    const formRef = useRef()
+    const [mutationMethod, setMutationMethod] = useState('CREATE')
+    const [saveFormData, setFormData] = useState(false)
+    const initialForm = {
+        name: '',
+        email: '',
+        password: '',
+        type: '',
+        document: '',
+        address: {
+            street: '',
+            number: '',
+            zipcode: '',
+            city: '',
+            state: '',
+            neighborhood: '',
+            complement: ''
+        },
+        phone: {
+            number: ''
+        }
+    }
+    const [formValues, setFormValues] = useState(initialForm)
+
+    const handleEdit = (id) => {
+        const data = tableData.find(x => x._id == id)
+        setFormValues({
+            ...data,
+            address: {
+                ...data.address[0]
+            },
+            phone: {
+                ...data.phone[0]
+            }
+        })
+        setMutationMethod(`UPDATE`)
+        onModalOpen()
+    }
 
     const breadcrumbItens = [
         <BreadcrumbItem key="1">
@@ -63,11 +113,34 @@ export default function User({ token, initialData, initialConfig }) {
             </Head>
 
             <TableList
+                initialConfig={initialConfig}
                 columns={columns}
                 data={data}
-                handleEdit={() => {}}
-                initialConfig={initialConfig}
+                toast={toast}
+                saveFormData={saveFormData}
+                setModalMethod={setMutationMethod}
+                initialForm={initialForm}
+                token={token}
                 tablePageCount={tablePageCount}
+                handleEdit={handleEdit}
+                setFormValues={setFormValues}
+                isEditOpen={isModalOpen}
+                onEditOpen={onModalOpen}
+                onEditClose={onModalClose}
+                formRef={formRef}
+
+                modalName="Usuário"
+                modalSize='3xl'
+                editForm={<UserForm
+                    token={token}
+                    toast={toast}
+                    formValues={formValues}
+                    setFormValues={setFormValues}
+                    formRef={formRef}
+                    method={mutationMethod}
+                    setSaveData={setFormData}
+                    onClose={onModalClose}
+                />}
             />
         </Layout>
     )
@@ -87,7 +160,7 @@ export async function getServerSideProps({ req }) {
     const apollo = getApolloClient({ token: cookies.token })
     const response = await apollo.query({
         query: FIND_USERS,
-        variables: { 
+        variables: {
             userInputs: {
                 limit: 10,
                 skip: 0

@@ -13,6 +13,9 @@ import { FiChevronUp, FiChevronDown } from 'react-icons/fi'
 import { BsChevronRight, BsChevronLeft, BsChevronDoubleLeft, BsChevronDoubleRight } from 'react-icons/bs'
 import { HiPencil, HiTrash } from 'react-icons/hi'
 
+import { useMutation } from '@apollo/client'
+import { UPDATE_USER } from '../../graphql'
+
 // Components
 import DefaultModal from '../modal'
 
@@ -20,29 +23,29 @@ export default function TableList({
     initialConfig,
     columns,
     data,
+    toast,
+    saveFormData,
+    setModalMethod,
+    initialForm,
     token,
-    route,
+    handleEdit,
+    tablePageCount,
+    setFormValues,
+    formRef,
     sort,
     sortByFilter,
-    toast,
-    formRef,
-    saveData,
-    setModalRoute,
-    handleEdit,
     setTableData,
-    tablePageCount,
     setTablePageCount,
-    initialForm,
-    setFormValues,
     isEditOpen,
     onEditOpen,
     onEditClose,
+    editForm,
     modalPadding = '0',
     modalSize = 'md',
-    modalName = 'Adicionar',
-    editForm
+    modalName = 'Adicionar'
 }) {
     let i = 0
+    const [updateUser] = useMutation(UPDATE_USER)
     const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure()
 
     const [firstLoading, setFirstLoading] = useState(true)
@@ -71,7 +74,7 @@ export default function TableList({
     //     const timeOutId = setTimeout(() => getPage(0), 800)
     //     return () => clearTimeout(timeOutId)
     //     // eslint-disable-next-line react-hooks/exhaustive-deps
-    // }, [queryString, saveData])
+    // }, [queryString, saveFormData])
 
     async function getPage(n, size = pageSize) {
         n++
@@ -133,32 +136,33 @@ export default function TableList({
         return a
     }
 
-    const handleDelete = async _id => {
+    const handleDelete = async id => {
         try {
-            // if (selectedId == '') {
-            //     setSelectedId(_id)
-            //     return onDeleteOpen()
-            // }
+            if (selectedId == '') {
+                setSelectedId(id)
+                return onDeleteOpen()
+            }
 
-            // await api.patch(`/${route}/update/${selectedId}`, {
-            //     active: false
-            // }, {
-            //     headers: {
-            //         Authorization: `Bearer ${token}`
-            //     }
-            // })
+            await updateUser({
+                variables: {
+                    userInput: {
+                        id: selectedId,
+                        active: false
+                    }
+                }
+            })
 
-            // onDeleteClose()
-            // setSelectedId('')
+            onDeleteClose()
+            setSelectedId('')
             // getPage(0)
             toast({
                 title: "Sucesso.",
-                description: `Registro apagado`,
+                description: 'Sucesso ao apagar o registro',
                 status: "success",
                 duration: 3000,
                 isClosable: true
             })
-        } catch {
+        } catch (e) {
             setSelectedId('')
             toast({
                 title: "Erro.",
@@ -171,13 +175,13 @@ export default function TableList({
     }
 
     function handleSubmit() {
-        // if (formRef.current)
-        //     formRef.current.handleSubmit()
+        if (formRef.current)
+            formRef.current.handleSubmit()
     }
 
     return (
         <Box>
-            {/* <Modal isOpen={isEditOpen} onClose={onEditClose} size={modalSize} isCentered>
+            <Modal isOpen={isEditOpen} onClose={onEditClose} size={modalSize} isCentered>
                 <ModalOverlay />
                 <ModalContent h={['100vh', 'auto']} borderRadius={['0', '12px']}>
                     <ModalHeader>{modalName}</ModalHeader>
@@ -186,23 +190,23 @@ export default function TableList({
                         {editForm}
                     </ModalBody>
                     <ModalFooter>
-                        <Button colorScheme="blue" mr={3} onClick={handleSubmit} isLoading={saveData}>Salvar</Button>
-                        <Button variant="ghost" onClick={onEditClose} disabled={saveData}>Cancelar</Button>
+                        <Button variant="ghost" mr={3} onClick={onEditClose} disabled={saveFormData}>Cancelar</Button>
+                        <Button colorScheme="blue" onClick={handleSubmit} isLoading={saveFormData}>Salvar</Button>
                     </ModalFooter>
                 </ModalContent>
-            </Modal> */}
+            </Modal>
 
-            {/* <DefaultModal
+            <DefaultModal
                 isOpen={isDeleteOpen}
                 onClose={onDeleteClose}
                 handleSuccess={handleDelete}
                 handleCancel={() => { setSelectedId(''); onDeleteClose() }}
             >
                 <Text style={{ fontSize: '20px' }}>Deseja apagar este registro?</Text>
-            </DefaultModal> */}
+            </DefaultModal>
 
-            {/* <Flex w="100%" mb="4" flexDir={['column', 'column', 'row']} justifyContent={['space-between']} alignItems={['flex-end', 'flex-end', 'center']}>
-                {
+            <Flex w="100%" mb="4" flexDir={['column', 'column', 'row']} justifyContent={['space-between']} alignItems={['flex-end', 'flex-end', 'center']}>
+                {/* {
                     sortByFilter != null ?
                         (<Flex bgColor="#fff" borderRadius="12px" alignSelf="flex-start" w="100%">
                             <Flex flexDir={['column', 'row']} alignItems={['stretch', 'center']} w="100%">
@@ -229,21 +233,21 @@ export default function TableList({
                                 </Box>
                             </Flex>
                         </Flex>) : (<></>)
-                }
+                } */}
                 <Box my={['4', '4', '0']}>
                     <Button
                         colorScheme="blue"
                         minW="150px"
                         onClick={() => {
                             setFormValues(initialForm)
-                            setModalRoute('/create')
+                            setModalMethod('CREATE')
                             onEditOpen()
                         }}
                     >
                         Adicionar
                     </Button>
                 </Box>
-            </Flex> */}
+            </Flex>
 
             <Box w="100%" style={{ overflowY: 'auto' }}>
                 {

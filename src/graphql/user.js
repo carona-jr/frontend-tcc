@@ -14,19 +14,15 @@ const ME = gql`
                 number
                 zipcode
                 neighborhood
+                city
+                state
                 complement
-                type
-                createdAt
-                updatedAt
                 active
             }
             phone {
                 _id
-                phone
-                type
+                number
                 active
-                createdAt
-                updatedAt
             }
             supervised {
                 _id
@@ -49,19 +45,15 @@ const USER = gql`
                 number
                 zipcode
                 neighborhood
+                city
+                state
                 complement
-                type
-                createdAt
-                updatedAt
                 active
             }
             phone {
                 _id
-                phone
-                type
+                number
                 active
-                createdAt
-                updatedAt
             }
             supervised {
                 _id
@@ -90,19 +82,15 @@ const FIND_USERS = gql`
                 number
                 zipcode
                 neighborhood
+                city
+                state
                 complement
-                type
-                createdAt
-                updatedAt
                 active
             }
             phone {
                 _id
-                phone
-                type
+                number
                 active
-                createdAt
-                updatedAt
             }
             supervised {
                 _id
@@ -113,8 +101,30 @@ const FIND_USERS = gql`
     }
 `
 
+const CREATE_USER = gql`
+    mutation createUser($userInput: UserInput!) {
+        createUser (userInput: $userInput) {
+            status,
+            code,
+            message
+        }
+    }
+`
+
+const UPDATE_USER = gql`
+    mutation updateUser($userInput: UserInput!) {
+        updateUser (userInput: $userInput) {
+            status,
+            code,
+            message
+        }
+    }  
+`
+
 export {
     ME,
     USER,
-    FIND_USERS
+    FIND_USERS,
+    CREATE_USER,
+    UPDATE_USER
 }

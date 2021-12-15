@@ -1,5 +1,5 @@
 import { LOGIN } from './auth'
-import { USER, ME, FIND_USERS } from './user'
+import { USER, ME, FIND_USERS, CREATE_USER, UPDATE_USER } from './user'
 import { NEW_SIGNER, NEW_CONTRACT, GET_ALL_CONTRACT, GET_CONTRACT_FILE, SEND_CONTRACT, UPDATE_CONTRACT, GET_ALL_CONTRACT_GROUP, GET_CONTRACT_BY_ID } from './contract'
 import { GET_FIELDS, ADD_FIELD, UPDATE_FIELD } from './field'
 
@@ -18,5 +18,7 @@ export {
     ADD_FIELD,
     UPDATE_FIELD,
     FIND_USERS,
-    NEW_SIGNER
+    NEW_SIGNER,
+    CREATE_USER,
+    UPDATE_USER
 }
