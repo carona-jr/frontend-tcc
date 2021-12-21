@@ -4,7 +4,6 @@ import { useRouter } from 'next/router'
 import Head from 'next/head'
 
 // GraphQL
-import { useApolloClient, useMutation } from '@apollo/client'
 import { getApolloClient } from '../../lib/apolloNextClient'
 import { FIND_USERS, CREATE_USER } from '../../src/graphql'
 
@@ -13,7 +12,7 @@ import { FaUser } from 'react-icons/fa'
 
 // Others
 import cookie from 'cookie'
-import { Button, Flex, useDisclosure, BreadcrumbItem, BreadcrumbLink, Text, useToast, Box, Input } from '@chakra-ui/react'
+import { Flex, useDisclosure, BreadcrumbItem, BreadcrumbLink, Text, useToast } from '@chakra-ui/react'
 
 // Components
 import dynamic from 'next/dynamic'
@@ -58,7 +57,7 @@ export default function User({ token, initialData, initialConfig }) {
     const { isOpen: isModalOpen, onOpen: onModalOpen, onClose: onModalClose } = useDisclosure()
     const formRef = useRef()
     const [mutationMethod, setMutationMethod] = useState('CREATE')
-    const [saveFormData, setFormData] = useState(false)
+    const [saveFormData, setSaveFormData] = useState(false)
     const initialForm = {
         name: '',
         email: '',
@@ -128,9 +127,11 @@ export default function User({ token, initialData, initialConfig }) {
                 onEditOpen={onModalOpen}
                 onEditClose={onModalClose}
                 formRef={formRef}
-
+                setTableData={setTableData}
+                setTablePageCount={setTablePageCount}
                 modalName="Usuário"
                 modalSize='3xl'
+                sortByFilter={[{ label: 'Nome', value: 'name' }, { label: 'E-mail', value: 'email' }]}
                 editForm={<UserForm
                     token={token}
                     toast={toast}
@@ -138,7 +139,7 @@ export default function User({ token, initialData, initialConfig }) {
                     setFormValues={setFormValues}
                     formRef={formRef}
                     method={mutationMethod}
-                    setSaveData={setFormData}
+                    setSaveData={setSaveFormData}
                     onClose={onModalClose}
                 />}
             />

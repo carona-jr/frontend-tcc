@@ -1,6 +1,5 @@
 // React
 import { useState } from 'react'
-import { useSelector } from 'react-redux'
 
 // Graphql
 import { useMutation } from '@apollo/client'
@@ -22,8 +21,7 @@ import { cpf, cnpj } from 'cpf-cnpj-validator'
 import InputMask from 'react-input-mask'
 
 
-export default function UserForm({ token, toast, formValues, setFormValues, formRef, method, setSaveData, onClose }) {
-    const user = useSelector(state => state.User)
+export default function UserForm({ toast, formValues, setFormValues, formRef, method, setSaveData, onClose }) {
     const [createUser] = useMutation(CREATE_USER)
     const [updateUser] = useMutation(UPDATE_USER)
     const [zipCodeLoading, setZipCodeLoading] = useState(false)

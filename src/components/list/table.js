@@ -13,8 +13,8 @@ import { FiChevronUp, FiChevronDown } from 'react-icons/fi'
 import { BsChevronRight, BsChevronLeft, BsChevronDoubleLeft, BsChevronDoubleRight } from 'react-icons/bs'
 import { HiPencil, HiTrash } from 'react-icons/hi'
 
-import { useMutation } from '@apollo/client'
-import { UPDATE_USER } from '../../graphql'
+import { useMutation, useApolloClient } from '@apollo/client'
+import { UPDATE_USER, FIND_USERS } from '../../graphql'
 
 // Components
 import DefaultModal from '../modal'
@@ -27,13 +27,10 @@ export default function TableList({
     saveFormData,
     setModalMethod,
     initialForm,
-    token,
     handleEdit,
     tablePageCount,
     setFormValues,
     formRef,
-    sort,
-    sortByFilter,
     setTableData,
     setTablePageCount,
     isEditOpen,
@@ -42,15 +39,18 @@ export default function TableList({
     editForm,
     modalPadding = '0',
     modalSize = 'md',
-    modalName = 'Adicionar'
+    modalName = 'Adicionar',
+    sortByFilter = [{ label: 'Nome', value: 'name' }]
 }) {
     let i = 0
     const [updateUser] = useMutation(UPDATE_USER)
+    const client = useApolloClient()
     const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure()
 
     const [firstLoading, setFirstLoading] = useState(true)
     const [selectedId, setSelectedId] = useState('')
     const [loadingTable, setLoadingTable] = useState(false)
+    const [variables, setVariables] = useState({ filter: '', sortBy: 'name', sortOrder: 1 })
 
     const {
         getTableProps,
@@ -67,63 +67,93 @@ export default function TableList({
         state: { pageIndex, pageSize }
     } = useTable({ columns, data, initialState: { pageIndex: 0, pageSize: initialConfig.initialPageSize }, pageCount: tablePageCount, manualPagination: true }, usePagination)
 
-    // useEffect(() => {
-    //     if (firstLoading)
-    //         return setFirstLoading(false)
+    useEffect(() => {
+        if (firstLoading)
+            return setFirstLoading(false)
 
-    //     const timeOutId = setTimeout(() => getPage(0), 800)
-    //     return () => clearTimeout(timeOutId)
-    //     // eslint-disable-next-line react-hooks/exhaustive-deps
-    // }, [queryString, saveFormData])
+        const timeOutId = setTimeout(() => getPage(0), 800)
+        return () => clearTimeout(timeOutId)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [variables, saveFormData])
 
     async function getPage(n, size = pageSize) {
         n++
-        if (n >= 1 && n <= tablePageCount) {
-            // setLoadingTable(true)
-            // gotoPage(n - 1)
-            // const queries = formatQueryString()
-            // const response = await api.get(`/${route}?limit=${n * size}&skip=${(n - 1) * size}${queries}`, {
-            //     headers: {
-            //         Authorization: `Bearer ${token}`
-            //     }
-            // })
-            // const count = response.data.count
-            // const pageNum = count / size
-            // setTableData(response.data.documents)
-            // setTablePageCount(count == 0 ? 1 : count % size == 0 ? parseInt(pageNum) : parseInt(pageNum) + 1)
-            // setLoadingTable(false)
+
+        let pageCount = tablePageCount
+        if (tablePageCount == 0)
+            pageCount++
+
+        if (n >= 1 && n <= pageCount) {
+            setLoadingTable(true)
+            gotoPage(n - 1)
+
+            const queryVariables = {
+                userInputs: {
+                    limit: n * size,
+                    skip: (n - 1) * size,
+                    sortBy: encodeURI(JSON.stringify({
+                        [variables.sortBy]: variables.sortOrder
+                    }))
+                }
+            }
+
+            if (variables.filter != '') {
+                queryVariables.userInputs.filterBy = encodeURI(JSON.stringify({
+                    name: { $regex: variables.filter, $options: 'i' }
+                }))
+            }
+
+            console.log("🚀 ~ file: table.js ~ line 94 ~ getPage ~ queryVariables", queryVariables)
+            const response = await client.query({
+                query: FIND_USERS,
+                variables: { ...queryVariables },
+                fetchPolicy: 'no-cache'
+            })
+            const count = response.data.findUsers.total
+            const pageNum = count / size
+            setTableData(response.data.findUsers.data)
+            setTablePageCount(count == 0 ? 1 : count % size == 0 ? parseInt(pageNum) : parseInt(pageNum) + 1)
+            setLoadingTable(false)
         }
     }
 
     async function getNextPage() {
         const page = pageIndex + 1
         if (page < tablePageCount) {
-            // setLoadingTable(true)
-            // nextPage()
-            // const queries = formatQueryString()
-            // const response = await api.get(`/${route}?limit=${(page + 1) * pageSize}&skip=${page * pageSize}${queries}`, {
-            //     headers: {
-            //         Authorization: `Bearer ${token}`
-            //     }
-            // })
-            // setTableData(response.data.documents)
-            // setLoadingTable(false)
+            setLoadingTable(true)
+            nextPage()
+            const response = await client.query({
+                query: FIND_USERS,
+                variables: {
+                    userInputs: {
+                        limit: (page + 1) * pageSize,
+                        skip: page * pageSize
+                    }
+                },
+                fetchPolicy: 'no-cache'
+            })
+            setTableData(response.data.findUsers.data)
+            setLoadingTable(false)
         }
     }
 
     async function getPreviousPage() {
         const page = pageIndex
         if (page >= 1) {
-            // setLoadingTable(true)
-            // previousPage()
-            // const queries = formatQueryString()
-            // const response = await api.get(`/${route}?limit=${page * pageSize}&skip=${(page - 1) * pageSize}${queries}`, {
-            //     headers: {
-            //         Authorization: `Bearer ${token}`
-            //     }
-            // })
-            // setTableData(response.data.documents)
-            // setLoadingTable(false)
+            setLoadingTable(true)
+            previousPage()
+            const response = await client.query({
+                query: FIND_USERS,
+                variables: {
+                    userInputs: {
+                        limit: page * pageSize,
+                        skip: (page - 1) * pageSize
+                    }
+                },
+                fetchPolicy: 'no-cache'
+            })
+            setTableData(response.data.findUsers.data)
+            setLoadingTable(false)
         }
     }
 
@@ -154,7 +184,7 @@ export default function TableList({
 
             onDeleteClose()
             setSelectedId('')
-            // getPage(0)
+            getPage(0)
             toast({
                 title: "Sucesso.",
                 description: 'Sucesso ao apagar o registro',
@@ -206,34 +236,33 @@ export default function TableList({
             </DefaultModal>
 
             <Flex w="100%" mb="4" flexDir={['column', 'column', 'row']} justifyContent={['space-between']} alignItems={['flex-end', 'flex-end', 'center']}>
-                {/* {
-                    sortByFilter != null ?
-                        (<Flex bgColor="#fff" borderRadius="12px" alignSelf="flex-start" w="100%">
-                            <Flex flexDir={['column', 'row']} alignItems={['stretch', 'center']} w="100%">
-                                <Center mb={['3', '0']} w={['100%', 'auto']}>
-                                    <Select
-                                        mr={['0', '2']}
-                                        value={queryString.sortBy}
-                                        onChange={e => {
-                                            setQueryString({ ...queryString, sortBy: e.target.value })
-                                        }}
-                                    >
-                                        {sortByFilter}
-                                    </Select>
-                                    {
-                                        queryString.sortOrder == 'desc' ? (
-                                            <FiChevronUp className="table-item" color="#4A5568" fontSize="48px" onClick={() => { setQueryString({ ...queryString, sortOrder: 'asc' }) }} />
-                                        ) : (
-                                            <FiChevronDown className="table-item" color="#4A5568" fontSize="48px" onClick={() => { setQueryString({ ...queryString, sortOrder: 'desc' }) }} />
-                                        )
-                                    }
-                                </Center>
-                                <Box ml={['0', '2']}>
-                                    <Input value={queryString.filter || ''} placeholder="pesquise..." onChange={e => setQueryString({ ...queryString, filter: e.target.value })} />
-                                </Box>
-                            </Flex>
-                        </Flex>) : (<></>)
-                } */}
+                <Flex bgColor="#fff" borderRadius="12px" alignSelf="flex-start" w="100%">
+                    <Flex flexDir={['column', 'row']} alignItems={['stretch', 'center']} w="100%">
+                        <Center mb={['3', '0']} w={['100%', 'auto']}>
+                            <Select
+                                mr={['0', '2']}
+                                value={variables.sortBy}
+                                onChange={e => {
+                                    setVariables({ ...variables, sortBy: e.target.value })
+                                }}
+                            >
+                                {sortByFilter.map(s => (
+                                    <option key={s.value} value={s.value}>{s.label}</option>
+                                ))}
+                            </Select>
+                            {
+                                variables.sortOrder == 1 ? (
+                                    <FiChevronUp className="table-item" color="#4A5568" fontSize="48px" onClick={() => { setVariables({ ...variables, sortOrder: -1 }) }} />
+                                ) : (
+                                    <FiChevronDown className="table-item" color="#4A5568" fontSize="48px" onClick={() => { setVariables({ ...variables, sortOrder: 1 }) }} />
+                                )
+                            }
+                        </Center>
+                        <Box ml={['0', '2']}>
+                            <Input value={variables.filter || ''} placeholder="pesquise..." onChange={e => setVariables({ ...variables, filter: e.target.value })} />
+                        </Box>
+                    </Flex>
+                </Flex>
                 <Box my={['4', '4', '0']}>
                     <Button
                         colorScheme="blue"
@@ -311,7 +340,7 @@ export default function TableList({
                 }
             </Box>
 
-            {/* <Flex
+            <Flex
                 flexDir={['column', 'column', 'row']}
                 alignItems={['center']}
                 justifyContent="space-between"
@@ -383,7 +412,7 @@ export default function TableList({
                         </Button>
                     </GridItem>
                 </Grid>
-            </Flex> */}
+            </Flex>
         </Box>
     )
 }
