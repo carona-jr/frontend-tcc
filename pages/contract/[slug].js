@@ -9,8 +9,8 @@ import { getApolloClient } from '../../lib/apolloNextClient'
 import { GET_CONTRACT_BY_ID, GET_FIELDS, ADD_FIELD, UPDATE_FIELD } from '../../src/graphql'
 
 // Icons
-import { FaSearch, FaPen, FaTrash, FaBold, FaItalic, FaUnderline, FaCode, FaHeading, FaQuoteLeft, FaListUl, FaListOl } from 'react-icons/fa'
-import { RiFilePaper2Fill } from 'react-icons/ri'
+import { FaSearch, FaPen, FaTrash, FaBold, FaItalic, FaUnderline, FaPlus, FaHeading, FaListUl, FaListOl } from 'react-icons/fa'
+import { RiFilePaper2Fill, RiPrinterLine } from 'react-icons/ri'
 
 // Slate
 import { createEditor } from 'slate'
@@ -60,7 +60,6 @@ import {
 } from '../../src/components/htmlEditor'
 
 export default function Contract({ token, data, querySigner, initialClauseOrder, initialClauses }) {
-
     const router = useRouter()
     const user = useSelector(state => state.User)
     const client = useApolloClient()
@@ -292,7 +291,30 @@ export default function Contract({ token, data, querySigner, initialClauseOrder,
     ]
 
     return (
-        <Layout token={token} router={router} title={`Detalhe ${formData.title}`} breadcrumbs={breadcrumbItens}>
+        <Layout
+            token={token}
+            router={router}
+            title={
+                <Flex mb="3" alignItems='center'>
+                    <Text
+                        fontSize={['16px', '16px', '24px']}
+                        fontWeight='small'
+                        pr='3'
+                        lineHeight={['16px', '16px', '24px']}
+                        textTransform="uppercase">{`Detalhe ${formData.title}`}
+                    </Text>
+                    {
+                        allowEdit ? <FaPen
+                            style={{ fontSize: '16px', cursor: 'pointer' }}
+                            onClick={() => {
+                                onAddOpen()
+                            }}
+                        /> : <></>
+                    }
+                </Flex>
+            }
+            breadcrumbs={breadcrumbItens}
+        >
             <Head>
                 <title>Contrato - Detalhe</title>
             </Head>
@@ -419,52 +441,27 @@ export default function Contract({ token, data, querySigner, initialClauseOrder,
                         </html>`)
                     }}
                 >
-                    PDF
-                </Button>
-                {
-                    allowEdit ? <Button
-                        colorScheme="facebook"
-                        variant="outline"
-                        mr='5'
-                        onClick={() => {
-                            setSigner({ name: '', email: '', document: '' })
-                            setSignersMethod('CREATE')
-                            onAddSignersOpen()
-                        }}
-                    >
-                        Nova Assinatura
-                    </Button> : <></>
-                }
-                {
-                    allowEdit ? <Button
-                        colorScheme="linkedin"
-                        variant="outline"
-                        mr='5'
-                        onClick={() => {
-                            setValue([{
-                                type: 'paragraph',
-                                children: [{ text: '' }]
-                            }])
-                            setClauseId('')
-                            onAddClauseOpen()
-                        }}
-                    >
-                        Nova Cláusula
-                    </Button> : <></>
-                }
-                <Button
-                    colorScheme="linkedin"
-                    variant="outline"
-                    onClick={() => {
-                        onAddOpen()
-                    }}
-                >
-                    Editar Contrato
+                    <RiPrinterLine style={{ fontSize: '24px' }} />
                 </Button>
             </Flex>
 
             <Box mb="10" mx="6">
-                <Text fontSize="16px" mb="6" textTransform="uppercase">Cláusulas</Text>
+                <Flex mb="3" alignItems='center'>
+                    <Text fontSize="16px" pr='3' lineHeight='16px' textTransform="uppercase">Cláusulas</Text>
+                    {
+                        allowEdit ? <FaPlus
+                            style={{ fontSize: '16px', cursor: 'pointer' }}
+                            onClick={() => {
+                                setValue([{
+                                    type: 'paragraph',
+                                    children: [{ text: '' }]
+                                }])
+                                setClauseId('')
+                                onAddClauseOpen()
+                            }}
+                        /> : <></>
+                    }
+                </Flex>
                 {clauses.columns.clause.cardIds.length == 0 ? <Text color='rgba(0, 0, 0, 0.5)'>Não foi adicionada nenhuma cláusula</Text> : <></>}
                 <DragDropContext onDragEnd={onDragEnd}>
                     {clauses.columnOrder.map(columnId => {
@@ -483,7 +480,19 @@ export default function Contract({ token, data, querySigner, initialClauseOrder,
             </Box>
 
             <Box mb="5" mx="6">
-                <Text fontSize="16px" mb="3" textTransform="uppercase">Assinaturas</Text>
+                <Flex mb="3" alignItems='center'>
+                    <Text fontSize="16px" pr='3' lineHeight='16px' textTransform="uppercase">Assinaturas</Text>
+                    {
+                        allowEdit ? <FaPlus
+                            style={{ fontSize: '16px', cursor: 'pointer' }}
+                            onClick={() => {
+                                setSigner({ name: '', email: '', document: '' })
+                                setSignersMethod('CREATE')
+                                onAddSignersOpen()
+                            }}
+                        /> : <></>
+                    }
+                </Flex>
                 {signersList.length == 0 ? <Text color='rgba(0, 0, 0, 0.5)'>Não foi adicionada nenhuma assinatura</Text> : <></>}
                 <Grid templateColumns="repeat(12, 1fr)" gap={2}>
                     {
@@ -491,7 +500,7 @@ export default function Contract({ token, data, querySigner, initialClauseOrder,
                             return (
                                 <GridItem
                                     key={s.name}
-                                    colSpan="3"
+                                    colSpan={['12', '12', '6', '6', '3']}
                                     p="2"
                                     border="1px solid rgba(0, 0, 0, 0.1)"
                                     borderRadius="4"
@@ -544,7 +553,7 @@ export default function Contract({ token, data, querySigner, initialClauseOrder,
                     }
                 </Grid>
             </Box>
-        </Layout>
+        </Layout >
     )
 }
 
