@@ -145,7 +145,7 @@ export default function UserForm({ toast, formValues, setFormValues, formRef, me
                 } catch (e) {
                     toast({
                         title: "Erro.",
-                        description: `Erro`,
+                        description: e.message,
                         status: "error",
                         duration: 3000,
                         isClosable: true
