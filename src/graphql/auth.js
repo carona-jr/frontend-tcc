@@ -17,19 +17,15 @@ const LOGIN = gql`
                     number
                     zipcode
                     neighborhood
+                    city
+                    state
                     complement
-                    type
-                    createdAt
-                    updatedAt
                     active
                 }
                 phone {
                     _id
-                    phone
-                    type
+                    number
                     active
-                    createdAt
-                    updatedAt
                 }
                 supervised {
                     _id

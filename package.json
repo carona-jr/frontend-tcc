@@ -15,7 +15,9 @@
     "@emotion/react": "11",
     "@emotion/styled": "11",
     "@react-pdf/renderer": "^2.0.21",
+    "axios": "^0.24.0",
     "cookie": "^0.4.1",
+    "cpf-cnpj-validator": "^1.0.3",
     "escape-html": "^1.0.3",
     "formik": "^2.2.9",
     "framer-motion": "4",
@@ -23,6 +25,7 @@
     "lodash": "^4.17.21",
     "mongo-object-reader": "^1.1.1",
     "next": "11.0.0",
+    "password-validator": "^5.2.1",
     "react": "17.0.2",
     "react-beautiful-dnd": "^13.1.0",
     "react-cookie": "^4.0.3",
@@ -30,7 +33,9 @@
     "react-dom": "17.0.2",
     "react-html-parser": "^2.0.2",
     "react-icons": "^4.2.0",
+    "react-input-mask": "^2.0.4",
     "react-redux": "^7.2.4",
+    "react-table": "^7.7.0",
     "react-trello": "^2.2.11",
     "slate": "^0.70.0",
     "slate-history": "^0.66.0",
@@ -38,7 +43,7 @@
     "slate-react": "^0.70.0",
     "styled-components": "^5.3.0",
     "swr": "^0.5.6",
-    "validator": "^13.6.0"
+    "validator": "^13.7.0"
   },
   "devDependencies": {
     "babel-plugin-styled-components": "^1.12.0",

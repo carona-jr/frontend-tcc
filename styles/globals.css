@@ -39,3 +39,7 @@ a {
 .react-trello-board div, .react-trello-board div div {
   width: 100%;
 }
+
+.table-item:hover {
+  cursor: pointer;
+}

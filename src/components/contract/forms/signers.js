@@ -68,7 +68,6 @@ export default function Signers({ isOpen, onClose, data, method, list, setList }
                                             }
                                         }
                                     })
-                                    console.log("🚀 ~ file: signers.js ~ line 71 ~ onSubmit={ ~ response", response)
 
                                     if (response.data.setSigner.code != 200)
                                         throw new Error()

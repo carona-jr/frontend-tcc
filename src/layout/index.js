@@ -89,6 +89,7 @@ export default function Layout({ children, token, router, title, breadcrumbs = [
                                                             flexDirection='column'
                                                             justifyContent='center'
                                                             key={i.description}
+                                                            _hover={{ backgroundColor: 'gray.100' }}
                                                         >
                                                             <Heading size="md" my="2" d='flex' justifyContent='center'>
                                                                 <LinkOverlay href={i.navigate}>{i.icon}</LinkOverlay>
