@@ -110,7 +110,6 @@ export default function SignIn() {
                                     <FormControl isInvalid={form.errors.login && form.touched.login} isRequired mb='25px'>
                                         <FormLabel htmlFor="login">Usuário</FormLabel>
                                         <Input {...field} id="login" placeholder="seu@email.com" type='email' />
-                                        {/* <FormErrorMessage>{form.errors.login}</FormErrorMessage> */}
                                     </FormControl>
                                 )}
                             </Field>
@@ -144,7 +143,6 @@ export default function SignIn() {
                                                     />}
                                             </InputRightElement>
                                         </InputGroup>
-                                        {/* <FormErrorMessage>{form.errors.password}</FormErrorMessage> */}
                                     </FormControl>
                                 )}
                             </Field>
@@ -165,7 +163,7 @@ export default function SignIn() {
                     )}
                 </Formik>
 
-                <Text fontSize="sm" casing="uppercase">Não tem uma conta? Crie aqui</Text>
+                <Text fontSize="sm" casing="uppercase" cursor='pointer' onClick={() => router.push('/signup')}>Não tem uma conta? Crie aqui</Text>
             </Box>
         </Center>
     )
