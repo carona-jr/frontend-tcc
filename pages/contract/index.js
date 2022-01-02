@@ -6,7 +6,7 @@ import { useSelector } from 'react-redux'
 
 // GraphQL
 import { useApolloClient, useMutation } from '@apollo/client'
-import { GET_ALL_CONTRACT_GROUP, UPDATE_CONTRACT } from '../../src/graphql'
+import { GET_ALL_CONTRACT_GROUP, UPDATE_CONTRACT, GET_FIELDS, GET_CONTRACT_BY_ID } from '../../src/graphql'
 
 // Icons
 import { RiFilePaper2Fill } from 'react-icons/ri'
@@ -15,6 +15,7 @@ import { RiFilePaper2Fill } from 'react-icons/ri'
 import cookie from 'cookie'
 import Board from 'react-trello'
 import { isNull } from 'lodash'
+import { pdf } from '@react-pdf/renderer'
 import { Button, Flex, useDisclosure, BreadcrumbItem, BreadcrumbLink, Text, useToast, Box, Input } from '@chakra-ui/react'
 
 // Components
@@ -24,6 +25,7 @@ import ContractForm from '../../src/components/contract/forms/contract'
 import DefaultModal from '../../src/components/modal'
 import { getDate } from '../../src/utils'
 import { contractStatus as status, contractColorStatus as colorStatus, contractNameStatus as nameStatus } from '../../src/utils/constants'
+import ContractPDF from '../../src/pdf/contract'
 
 export default function Contract({ token }) {
     // General
@@ -121,7 +123,6 @@ export default function Contract({ token }) {
 
             if (data) {
                 const cards = data.contractsByGroup
-                console.log("🚀 ~ file: index.js ~ line 124 ~ getContracts ~ cards", cards)
                 total[st] = data.total
 
                 contractCards[st] = cards.map(card => ({
@@ -241,7 +242,43 @@ export default function Contract({ token }) {
         }
     }
 
-    function handleChangeStatus(cardId, sourceLaneId, targetLaneId) {
+    async function handleChangeStatus(cardId, sourceLaneId, targetLaneId) {
+        if (targetLaneId == 'SIGNED') {
+            const response = await client.query({
+                query: GET_CONTRACT_BY_ID,
+                variables: { _id: cardId }
+            })
+            const contract = response.data.contract.data[0]
+            const clauses = await client.query({
+                query: GET_FIELDS,
+                variables: { contractId: cardId }
+            })
+
+            const initialClauseOrder = []
+            let initialClauses = {}
+            Array.from(clauses.data.fields.data).map(clause => {
+                initialClauseOrder.push(clause._id)
+                initialClauses[clause._id] = {
+                    _id: clause._id,
+                    content: clause.text
+                }
+            })
+
+            const blob = await pdf(ContractPDF({
+                contract,
+                clauses: initialClauses,
+                order: initialClauseOrder,
+                signers: contract.signers
+            })).toString()
+            const base64 = Buffer.from(blob).toString('base64')
+
+            return handleCardUpdate({
+                id: cardId,
+                status: targetLaneId,
+                base64
+            })
+        }
+
         handleCardUpdate({
             id: cardId,
             status: targetLaneId

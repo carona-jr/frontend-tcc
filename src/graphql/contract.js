@@ -23,6 +23,7 @@ const UPDATE_CONTRACT = gql`
             total
             data {
                 title,
+                base64,
                 active
             }
         }
