@@ -64,7 +64,11 @@ const GET_ALL_CONTRACT_GROUP = gql`
                     subtitle,
                     ipfsHash,
                     ethHash,
-                    createdAt
+                    createdAt,
+                    ownerId {
+                        _id,
+                        name
+                    }
                 }
             }
         }
@@ -91,7 +95,10 @@ const GET_CONTRACT_BY_ID = gql`
                     updatedAt
                 },
                 createdAt,
-                ownerId,
+                ownerId {
+                    _id,
+                    name
+                },
                 status
             }
         }

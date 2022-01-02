@@ -2,6 +2,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/router'
 import Head from 'next/head'
+import { useSelector } from 'react-redux'
 
 // GraphQL
 import { useApolloClient, useMutation } from '@apollo/client'
@@ -30,6 +31,7 @@ export default function Contract({ token }) {
     const toast = useToast()
     const [firstLoading, setFirstLoading] = useState(true)
     const client = useApolloClient()
+    const user = useSelector(state => state.User)
 
     // Contract
     const { isOpen: isAddOpen, onOpen: onAddOpen, onClose: onAddClose } = useDisclosure()
@@ -119,13 +121,16 @@ export default function Contract({ token }) {
 
             if (data) {
                 const cards = data.contractsByGroup
+                console.log("🚀 ~ file: index.js ~ line 124 ~ getContracts ~ cards", cards)
                 total[st] = data.total
 
                 contractCards[st] = cards.map(card => ({
                     ...card,
                     id: card._id,
                     description: card.subtitle,
-                    tags: [{ bgcolor: colorStatus[`BG_${st}`], color: colorStatus[`CO_${st}`], title: st }],
+                    tags: [
+                        { bgcolor: 'transparent', color: '#000', title: `Criado por ${card.ownerId.name}` },
+                        { bgcolor: colorStatus[`BG_${st}`], color: colorStatus[`CO_${st}`], title: st }],
                     label: getDate(card.createdAt)
                 }))
             }

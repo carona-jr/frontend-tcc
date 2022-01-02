@@ -63,7 +63,7 @@ export default function Contract({ token, data, querySigner, initialClauseOrder,
     const router = useRouter()
     const user = useSelector(state => state.User)
     const client = useApolloClient()
-    const allowEdit = user._id == data.ownerId && (data.status == 'OPENED' || data.status == 'PENDING')
+    const allowEdit = user._id == data.ownerId._id && (data.status == 'OPENED' || data.status == 'PENDING')
     const [addField] = useMutation(ADD_FIELD)
     const [updateField] = useMutation(UPDATE_FIELD)
 
