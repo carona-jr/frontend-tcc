@@ -129,7 +129,9 @@ export default function Layout({ children, token, router, title, breadcrumbs = [
                                     </MenuButton>
                                     <MenuList>
                                         <MenuGroup title='Perfil'>
-                                            <MenuItem>Minha Conta</MenuItem>
+                                            <MenuItem onClick={() => {
+                                                router.push('/account')
+                                            }}>Minha Conta</MenuItem>
                                             <MenuItem>Pagamentos</MenuItem>
                                             <MenuItem onClick={() => {
                                                 removeCookie('token')

@@ -174,7 +174,7 @@ export default function SignIn() {
                                         {({ field, form }) => (
                                             <FormControl isInvalid={form.errors.name && form.touched.name} isRequired mb='5px'>
                                                 <FormLabel fontSize='12px' htmlFor="name">Nome</FormLabel>
-                                                <Input {...field} id="name" placeholder="seu cliente" type='text' />
+                                                <Input {...field} id="name" placeholder="seu nome" type='text' />
                                             </FormControl>
                                         )}
                                     </Field>
