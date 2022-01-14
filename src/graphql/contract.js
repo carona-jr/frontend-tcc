@@ -88,6 +88,8 @@ const GET_CONTRACT_BY_ID = gql`
                 ipfsHash,
                 ethHash,
                 signers {
+                    _id,
+                    userId,
                     name,
                     email,
                     document,
@@ -136,6 +138,12 @@ const NEW_SIGNER = gql`
     }
 `
 
+const SIGN_CONTRACT = gql`
+    mutation signContract($signContractInput: SignContractInput!) {
+        signContract(signContractInput: $signContractInput)
+    }
+`
+
 export {
     NEW_CONTRACT,
     UPDATE_CONTRACT,
@@ -144,5 +152,6 @@ export {
     GET_CONTRACT_BY_ID,
     GET_CONTRACT_FILE,
     SEND_CONTRACT,
-    NEW_SIGNER
+    NEW_SIGNER,
+    SIGN_CONTRACT
 }

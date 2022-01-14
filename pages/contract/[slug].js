@@ -6,7 +6,7 @@ import Head from 'next/head'
 // GraphQL
 import { useApolloClient, useMutation } from '@apollo/client'
 import { getApolloClient } from '../../lib/apolloNextClient'
-import { GET_CONTRACT_BY_ID, GET_FIELDS, ADD_FIELD, UPDATE_FIELD } from '../../src/graphql'
+import { GET_CONTRACT_BY_ID, GET_FIELDS, ADD_FIELD, UPDATE_FIELD, ME } from '../../src/graphql'
 
 // Icons
 import { FaSearch, FaPen, FaTrash, FaBold, FaItalic, FaUnderline, FaPlus, FaHeading, FaListUl, FaListOl } from 'react-icons/fa'
@@ -58,8 +58,9 @@ import {
     serialize as objToHtml,
     deserialize as htmlToObj
 } from '../../src/components/htmlEditor'
+import SignerModalButton from '../../src/components/contract/SignerModalButton'
 
-export default function Contract({ token, data, querySigner, initialClauseOrder, initialClauses }) {
+export default function Contract({ token, data, querySigner, initialClauseOrder, initialClauses, currenteUserId }) {
     const router = useRouter()
     const user = useSelector(state => state.User)
     const client = useApolloClient()
@@ -71,9 +72,6 @@ export default function Contract({ token, data, querySigner, initialClauseOrder,
     const { isOpen: isAddOpen, onOpen: onAddOpen, onClose: onAddClose } = useDisclosure()
     const [formData, setFormData] = useState({ title: data.title, subtitle: data.subtitle, id: data._id })
     const [formMethod] = useState('UPDATE')
-
-    // Signers
-    const { isOpen: isSignerOpen, onOpen: onSignerOpen, onClose: onSignerClose } = useDisclosure()
 
     // Slate
     const editor = useMemo(() => withHistory(withReact(createEditor())), [])
@@ -107,7 +105,6 @@ export default function Contract({ token, data, querySigner, initialClauseOrder,
     const [signersMethod, setSignersMethod] = useState('CREATE')
     const [signersList, setSignersList] = useState(data.signers)
 
-    //[{ _id: '123', userId: '611477fcd5299b005f7ae331', name: 'carlos', email: 'carona_jr@hotmail.com', document: '1451', signerStatus: 'NOT_SIGNED', createdAt: '1638923173' }]
     async function onDragEnd(result) {
         const { destination, source, draggableId } = result
 
@@ -255,20 +252,8 @@ export default function Contract({ token, data, querySigner, initialClauseOrder,
         setSignersList(list)
     }
 
-    function handleSign(_id, status) {
-        if ((querySigner != _id && _id) || data.status != 'SENDED')
-            return
-
-        if (!_id) {
-            const s = signersList.find(x => x._id == signer._id)
-            s.signerStatus = status
-            setSigner(s)
-            return onSignerClose()
-        }
-
-        const s = signersList.find(x => x._id == _id)
-        setSigner(s)
-        onSignerOpen()
+    async function handleSign(userId) {
+        setSigner(userId)
     }
 
     const breadcrumbItens = [
@@ -371,39 +356,6 @@ export default function Contract({ token, data, querySigner, initialClauseOrder,
                         }}
                     />
                 </Slate>
-            </DefaultModal>
-
-            <DefaultModal
-                modalName="Assinatura"
-                isOpen={isSignerOpen}
-                onClose={onSignerClose}
-                handleSuccess={() => handleSigner()}
-                size='sm'
-                showButton={false}
-            >
-                <Text textAlign="center" mb="5">Você deseja assinar este contrato?</Text>
-                <Flex justifyContent='center'>
-                    <Button
-                        colorScheme="whatsapp"
-                        variant="ghost"
-                        mr='5'
-                        onClick={() => {
-                            handleSign(null, 'SIGNED')
-                        }}
-                    >
-                        Assinar
-                    </Button>
-                    <Button
-                        colorScheme="red"
-                        variant="ghost"
-                        mr='5'
-                        onClick={() => {
-                            handleSign(null, 'REFUSED')
-                        }}
-                    >
-                        Recusar
-                    </Button>
-                </Flex>
             </DefaultModal>
 
             <Signers
@@ -521,17 +473,18 @@ export default function Contract({ token, data, querySigner, initialClauseOrder,
                                             <Flex justifyContent="space-between" alignItems='center'>
                                                 <Text>{s.name}</Text>
                                                 {
+                                                    s.userId === currenteUserId ?
+                                                        <SignerModalButton
+                                                            contractId={data._id}
+                                                            currentUserId={ currenteUserId } /> : <></>
+                                                }
+                                                {
                                                     allowEdit ? <Box fontSize="14px" cursor='pointer'>
                                                         <FaPen onClick={() => handleEditSigner(s._id)} style={{ marginBottom: '8px' }} />
                                                         <FaTrash onClick={() => handleDeleteSigner(s._id)} />
-                                                    </Box> : querySigner == s._id && data.status == 'SENDED' ? <Button
-                                                        colorScheme="whatsapp"
-                                                        variant="unstyled"
-                                                        mr='2'
-                                                    >
-                                                        Assinar
-                                                    </Button> : <></>
+                                                    </Box> : <></>
                                                 }
+
                                             </Flex>
                                         </Heading>
                                         <Box mb="2">
@@ -559,6 +512,7 @@ export default function Contract({ token, data, querySigner, initialClauseOrder,
 
 export async function getServerSideProps({ req }) {
     const cookies = cookie.parse(req.headers.cookie || '')
+
     const url = req.url.split('/')
     const params = url[url.length - 1].split('?')
     const id = params[0]
@@ -575,6 +529,11 @@ export async function getServerSideProps({ req }) {
     const apollo = getApolloClient({ token: cookies.token })
     const response = await apollo.query({
         query: GET_CONTRACT_BY_ID,
+        variables: { _id: id }
+    })
+
+    const me = await apollo.query({
+        query: ME,
         variables: { _id: id }
     })
 
@@ -598,6 +557,7 @@ export async function getServerSideProps({ req }) {
             token: cookies.token,
             data: response.data.contract.data[0],
             querySigner: queryString,
+            currenteUserId: me.data.me._id,
             initialClauseOrder,
             initialClauses
         }
