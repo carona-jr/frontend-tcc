@@ -19,15 +19,31 @@ import { Formik, Form, Field, getIn } from 'formik'
 import validator from 'validator'
 import { cpf, cnpj } from 'cpf-cnpj-validator'
 import InputMask from 'react-input-mask'
+import passwordValidator from 'password-validator'
 
 
-export default function UserForm({ toast, formValues, setFormValues, formRef, method, setSaveData, onClose }) {
+export default function UserForm({ toast, formValues, setFormValues, formRef, method, setSaveData, onClose = true }) {
     const [createUser] = useMutation(CREATE_USER)
     const [updateUser] = useMutation(UPDATE_USER)
     const [zipCodeLoading, setZipCodeLoading] = useState(false)
 
+    const passwordSchema = new passwordValidator()
+    passwordSchema
+        .is().min(6)
+        .is().max(255)
+        .has().symbols()
+        .has().uppercase()
+        .has().lowercase()
+        .has().digits(1)
+        .has().not().spaces()
+        .is().not().oneOf(['Password', 'Password123', '123456', '123'])
+
     function validate(type, value) {
         let error
+        const length = value ? value.length : 0
+
+        if (type == 'senha' && !passwordSchema.validate(value) && length > 0)
+            error = 'mínimo 6 digitos com uma maiúscula, minúscula, um número, uma letra e um caractere especial'
 
         if (type == 'senha' && method == 'UPDATE')
             return error
@@ -41,7 +57,7 @@ export default function UserForm({ toast, formValues, setFormValues, formRef, me
         if (type == 'documento') {
             value = value.replace(/\D/g, '')
 
-            if (value.length < 11 || value.length == 12 || value.length == 13)
+            if (length < 11 || length == 12 || length == 13)
                 error = `${type} é inválido`
             else if (value.length == 11 && !cpf.isValid(value))
                 error = `${type} é inválido`
@@ -121,6 +137,8 @@ export default function UserForm({ toast, formValues, setFormValues, formRef, me
                         delete body.__typename
                         delete body.supervised
                         delete body._id
+                        delete body.credit
+                        delete body.reservedCredit
                         delete body.address.__typename
                         delete body.address._id
                         delete body.phone.__typename
@@ -137,7 +155,7 @@ export default function UserForm({ toast, formValues, setFormValues, formRef, me
                     onClose()
                     toast({
                         title: "Sucesso.",
-                        description: `Sucesso`,
+                        description: `Sucesso ao salvar`,
                         status: "success",
                         duration: 3000,
                         isClosable: true
@@ -171,7 +189,7 @@ export default function UserForm({ toast, formValues, setFormValues, formRef, me
                                             {({ field, form }) => (
                                                 <FormControl isInvalid={form.errors.name && form.touched.name} isRequired mb='5px'>
                                                     <FormLabel fontSize='12px' htmlFor="name">Nome</FormLabel>
-                                                    <Input {...field} id="name" placeholder="seu cliente" type='text' />
+                                                    <Input {...field} id="name" placeholder="seu nome" type='text' />
                                                 </FormControl>
                                             )}
                                         </Field>
@@ -180,7 +198,7 @@ export default function UserForm({ toast, formValues, setFormValues, formRef, me
                                     <GridItem colSpan={12}>
                                         <Field name="email" validate={value => validate('email', value)}>
                                             {({ field, form }) => (
-                                                <FormControl isInvalid={form.errors.email && form.touched.email} isRequired mb='5px'>
+                                                <FormControl isInvalid={form.errors.email && form.touched.email} isRequired mb='5px' isReadOnly={typeof onClose == 'boolean'}>
                                                     <FormLabel fontSize='12px' htmlFor="email">E-mail</FormLabel>
                                                     <Input {...field} id="email" placeholder="seu@cliente.com" type='email' />
                                                     <FormErrorMessage>{form.errors.email}</FormErrorMessage>
@@ -256,6 +274,7 @@ export default function UserForm({ toast, formValues, setFormValues, formRef, me
                                                 </FormControl> : <FormControl isInvalid={form.errors.password && form.touched.password} mb='5px'>
                                                     <FormLabel fontSize='12px' htmlFor="password">Senha</FormLabel>
                                                     <Input {...field} id="password" placeholder="******" type='password' />
+                                                    <FormErrorMessage>{form.errors.password}</FormErrorMessage>
                                                 </FormControl>
                                             )}
                                         </Field>
