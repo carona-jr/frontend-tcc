@@ -49,9 +49,9 @@ export default function User({ token, data }) {
     ]
 
     return (
-        <Layout token={token} router={router} title="Usuários" breadcrumbs={breadcrumbItens}>
+        <Layout token={token} router={router} title="Minha conta" breadcrumbs={breadcrumbItens}>
             <Head>
-                <title>Usuários - Lista</title>
+                <title>Minha Conta</title>
             </Head>
 
             <UserForm
@@ -96,6 +96,7 @@ export async function getServerSideProps({ req }) {
     const response = await apollo.query({
         query: ME
     })
+    console.log("🚀 ~ file: index.js ~ line 99 ~ getServerSideProps ~ response", response)
 
     return {
         props: {

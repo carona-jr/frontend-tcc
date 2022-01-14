@@ -28,6 +28,8 @@ const ME = gql`
                 _id
             }
             active
+            credit
+            reservedCredit
         }
     }
 `
@@ -59,6 +61,8 @@ const USER = gql`
                 _id
             }
             active
+            credit
+            reservedCredit
         }
     }
 `
@@ -71,32 +75,34 @@ const FIND_USERS = gql`
         message
         total
         data {
-            _id
-            name
-            email
-            type
-            document
-            address {
                 _id
-                street
-                number
-                zipcode
-                neighborhood
-                city
-                state
-                complement
+                name
+                email
+                type
+                document
+                address {
+                    _id
+                    street
+                    number
+                    zipcode
+                    neighborhood
+                    city
+                    state
+                    complement
+                    active
+                }
+                phone {
+                    _id
+                    number
+                    active
+                }
+                supervised {
+                    _id
+                }
                 active
+                credit
+                reservedCredit
             }
-            phone {
-                _id
-                number
-                active
-            }
-            supervised {
-                _id
-            }
-            active
-        }
         }
     }
 `

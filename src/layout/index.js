@@ -132,7 +132,9 @@ export default function Layout({ children, token, router, title, breadcrumbs = [
                                             <MenuItem onClick={() => {
                                                 router.push('/account')
                                             }}>Minha Conta</MenuItem>
-                                            <MenuItem>Pagamentos</MenuItem>
+                                            <MenuItem onClick={() => {
+                                                router.push('/credit')
+                                            }}>Pagamentos</MenuItem>
                                             <MenuItem onClick={() => {
                                                 removeCookie('token')
                                                 router.reload()

@@ -22,7 +22,7 @@ import InputMask from 'react-input-mask'
 import passwordValidator from 'password-validator'
 
 
-export default function UserForm({ toast, formValues, setFormValues, formRef, method, setSaveData, onClose = () => { } }) {
+export default function UserForm({ toast, formValues, setFormValues, formRef, method, setSaveData, onClose = true }) {
     const [createUser] = useMutation(CREATE_USER)
     const [updateUser] = useMutation(UPDATE_USER)
     const [zipCodeLoading, setZipCodeLoading] = useState(false)
@@ -137,6 +137,8 @@ export default function UserForm({ toast, formValues, setFormValues, formRef, me
                         delete body.__typename
                         delete body.supervised
                         delete body._id
+                        delete body.credit
+                        delete body.reservedCredit
                         delete body.address.__typename
                         delete body.address._id
                         delete body.phone.__typename
@@ -196,7 +198,7 @@ export default function UserForm({ toast, formValues, setFormValues, formRef, me
                                     <GridItem colSpan={12}>
                                         <Field name="email" validate={value => validate('email', value)}>
                                             {({ field, form }) => (
-                                                <FormControl isInvalid={form.errors.email && form.touched.email} isRequired mb='5px'>
+                                                <FormControl isInvalid={form.errors.email && form.touched.email} isRequired mb='5px' isReadOnly={typeof onClose == 'boolean'}>
                                                     <FormLabel fontSize='12px' htmlFor="email">E-mail</FormLabel>
                                                     <Input {...field} id="email" placeholder="seu@cliente.com" type='email' />
                                                     <FormErrorMessage>{form.errors.email}</FormErrorMessage>
