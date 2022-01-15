@@ -103,7 +103,6 @@ export default function TableList({
                 }))
             }
 
-            console.log("🚀 ~ file: table.js ~ line 94 ~ getPage ~ queryVariables", queryVariables)
             const response = await client.query({
                 query: FIND_USERS,
                 variables: { ...queryVariables },
