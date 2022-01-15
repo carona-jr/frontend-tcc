@@ -26,6 +26,7 @@ export default function User({ token, data, coupons }) {
     const router = useRouter()
     const [code, setCode] = useState('')
     const [credit, setCredit] = useState(data.credit)
+    const [reservedCredit, setReservedCredit] = useState(data.reservedCredit)
     const [deposit] = useMutation(DEPOSIT)
     const client = useApolloClient()
 
@@ -53,7 +54,22 @@ export default function User({ token, data, coupons }) {
 
             const response = await client.query({ query: ME })
             setCredit(response.data.me.credit)
+            setReservedCredit(response.data.me.reservedCredit)
             setCode('')
+
+            const responseCoupons = await client.query({
+                query: FIND_COUPONS,
+                variables: {
+                    couponInputs: {
+                        limit: 10,
+                        skip: 0
+                    }
+                },
+                fetchPolicy: 'no-cache'
+            })
+
+            setPage(1)
+            setItems([...responseCoupons.data.findCoupons.data])
 
             toast({
                 title: "Sucesso.",
@@ -110,10 +126,15 @@ export default function User({ token, data, coupons }) {
                 <title>Créditos</title>
             </Head>
 
-            <Flex flexDir='column' alignItems='center' my="10">
+            <Flex flexDir='column' alignItems='center' my="5">
                 <Text textTransform='uppercase' fontSize='1rem'>Você possui</Text>
-                <Text mb='5' fontSize='3rem' fontWeight='600' color='green.400'>{currencyFormatter(credit)}</Text>
-                <Box mb='5' minW="400px">
+                <Text mb='3' fontSize='3rem' fontWeight='600' color='green.400'>{currencyFormatter(credit)}</Text>
+                <Flex mb='5' alignItems='center'>
+                    <Text mr='1' fontSize='1rem' fontWeight='500' color='blackAlpha.700'>Você possui</Text>
+                    <Text mr='1' fontSize='1rem' fontWeight='600' color='yellow.400'>{currencyFormatter(reservedCredit)}</Text>
+                    <Text fontSize='1rem' fontWeight='500' color='blackAlpha.700'>reservados</Text>
+                </Flex>
+                <Box mb='5' minW="300px">
                     <Input placeholder='cole o código aqui para adicionar mais crédito' size='md' onChange={(e) => { setCode(e.target.value) }} />
                 </Box>
                 <Button
@@ -127,7 +148,7 @@ export default function User({ token, data, coupons }) {
             </Flex>
 
             <Flex justifyContent='center'>
-                <Box w='50%'>
+                <Box w={['100%', '100%', '50%']}>
                     <InfiniteScroll
                         style={{ paddingBottom: '48px' }}
                         dataLength={items.length}
