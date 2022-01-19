@@ -138,9 +138,21 @@ const NEW_SIGNER = gql`
     }
 `
 
+const REMOVE_SIGNER = gql`
+    mutation removeSigner($signId: ID!, $contractId: ID!) {
+        removeSigner(signId: $signId, contractId: $contractId)
+    }
+`
+
 const SIGN_CONTRACT = gql`
     mutation signContract($signContractInput: SignContractInput!) {
         signContract(signContractInput: $signContractInput)
+    }
+`
+
+const UPDATE_SIGNER = gql`
+    mutation updateSigner($signId: ID!, $signerInput: SignerInput!) {
+        updateSigner(signId: $signId, signerInput: $signerInput)
     }
 `
 
@@ -153,5 +165,7 @@ export {
     GET_CONTRACT_FILE,
     SEND_CONTRACT,
     NEW_SIGNER,
-    SIGN_CONTRACT
+    SIGN_CONTRACT,
+    REMOVE_SIGNER,
+    UPDATE_SIGNER
 }

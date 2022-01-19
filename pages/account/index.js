@@ -96,7 +96,6 @@ export async function getServerSideProps({ req }) {
     const response = await apollo.query({
         query: ME
     })
-    console.log("🚀 ~ file: index.js ~ line 99 ~ getServerSideProps ~ response", response)
 
     return {
         props: {
