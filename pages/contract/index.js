@@ -6,7 +6,7 @@ import { useSelector } from 'react-redux'
 
 // GraphQL
 import { useApolloClient, useMutation } from '@apollo/client'
-import { GET_ALL_CONTRACT_GROUP, UPDATE_CONTRACT, GET_FIELDS, GET_CONTRACT_BY_ID } from '../../src/graphql'
+import { GET_ALL_CONTRACT_GROUP, UPDATE_CONTRACT, GET_FIELDS, GET_CONTRACT_BY_ID, ESTIMATE_CONTRACT } from '../../src/graphql'
 
 // Icons
 import { RiFilePaper2Fill } from 'react-icons/ri'
@@ -14,17 +14,17 @@ import { RiFilePaper2Fill } from 'react-icons/ri'
 // Others
 import cookie from 'cookie'
 import Board from 'react-trello'
-import { isNull } from 'lodash'
+import { isNull, round } from 'lodash'
 import { pdf } from '@react-pdf/renderer'
 import { Button, Flex, useDisclosure, BreadcrumbItem, BreadcrumbLink, Text, useToast, Box, Input } from '@chakra-ui/react'
+import { currencyFormatter, getDate } from '../../src/utils'
 
 // Components
 import dynamic from 'next/dynamic'
 const Layout = dynamic(() => import('../../src/layout'))
 import ContractForm from '../../src/components/contract/forms/contract'
 import DefaultModal from '../../src/components/modal'
-import { getDate } from '../../src/utils'
-import { contractStatus as status, contractColorStatus as colorStatus, contractNameStatus as nameStatus } from '../../src/utils/constants'
+import { contractStatus as status, contractColorStatus as colorStatus, contractNameStatus as nameStatus, transactionNameStatus, transactionColorStatus } from '../../src/utils/constants'
 import ContractPDF from '../../src/pdf/contract'
 
 export default function Contract({ token }) {
@@ -40,10 +40,13 @@ export default function Contract({ token }) {
     const [formData, setFormData] = useState({ title: '', subtitle: '' })
     const [formMethod] = useState('CREATE')
     const [updateContract] = useMutation(UPDATE_CONTRACT)
+    const [estimateContract] = useMutation(ESTIMATE_CONTRACT)
     const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure()
     const [deleteCallback, setDeleteCallback] = useState(null)
-    const [isDeleteLoading, setDeleteLoading] = useState(true)
+    const [isLoading, setLoading] = useState(false)
     const [filter, setFilter] = useState('')
+    const [contractToSign, setContractToSign] = useState({ contractId: '', gasPrice: 0, tax: 0, reservedValue: 0, total: 0 })
+    const { isOpen: isEstimatedGasOpen, onOpen: onEstimatedGasOpen, onClose: onEstimatedGasClose } = useDisclosure()
     const [contractTotal, setContractTotal] = useState({
         OPENED: 0,
         PENDING: 0,
@@ -125,15 +128,38 @@ export default function Contract({ token }) {
                 const cards = data.contractsByGroup
                 total[st] = data.total
 
-                contractCards[st] = cards.map(card => ({
-                    ...card,
-                    id: card._id,
-                    description: card.subtitle,
-                    tags: [
-                        { bgcolor: 'transparent', color: '#000', title: `Criado por ${card.ownerId.name}` },
-                        { bgcolor: colorStatus[`BG_${st}`], color: colorStatus[`CO_${st}`], title: st }],
-                    label: getDate(card.createdAt)
-                }))
+                contractCards[st] = cards.map(card => {
+                    let cardValue = {
+                        ...card,
+                        id: card._id,
+                        description: card.subtitle,
+                        tags: [{ bgcolor: 'transparent', color: '#000', title: `Criado por ${card.ownerId.name}` }],
+                        label: getDate(card.createdAt)
+                    }
+
+                    if (st == 'SIGNED') {
+                        cardValue.tags.push({
+                            bgcolor: transactionColorStatus[`BG_${card.transactionStatus}`],
+                            color: transactionColorStatus[`CO_${card.transactionStatus}`],
+                            title: card.transactionStatus == 'WAITING' ?
+                                currencyFormatter(card.gasPrice + card.tax + card.reservedValue) + '*' : currencyFormatter(card.realGasPrice || 0)
+                        })
+                        cardValue.tags.push({
+                            bgcolor: transactionColorStatus[`BG_${card.transactionStatus}`],
+                            color: transactionColorStatus[`CO_${card.transactionStatus}`],
+                            title: card.transactionStatus
+                        })
+
+                        if (card.transactionStatus == 'APPROVED')
+                            cardValue.tags.push({ bgcolor: 'transparent', color: '#000', title: <Box>{`#${card.transactionId}`}</Box> })
+                    }
+                    else {
+                        cardValue.tags.push({ bgcolor: colorStatus[`BG_${st}`], color: colorStatus[`CO_${st}`], title: st })
+                    }
+
+
+                    return cardValue
+                })
             }
         })
 
@@ -198,14 +224,14 @@ export default function Contract({ token }) {
 
     function handleDelete(callback, isDeleteConfirm = false) {
         if (!isDeleteConfirm) {
-            setDeleteLoading(false)
+            setLoading(false)
             setDeleteCallback(() => callback)
             return onDeleteOpen()
         }
 
         onDeleteClose()
         deleteCallback()
-        setDeleteLoading(true)
+        setLoading(true)
         setDeleteCallback(null)
     }
 
@@ -219,8 +245,15 @@ export default function Contract({ token }) {
     async function handleCardUpdate(contract) {
         try {
             const response = await updateContract({ variables: { updateContractInput: contract } })
+
             if (response.data.updateContract.code != 200)
                 throw new Error(response.data.updateContract.message)
+
+            if (contractToSign.contractId != '') {
+                setContractToSign({ contractId: '', gasPrice: 0, tax: 0, reservedValue: 0, total: 0 })
+                setLoading(false)
+                onEstimatedGasClose()
+            }
 
             toast({
                 title: "Sucesso.",
@@ -230,6 +263,7 @@ export default function Contract({ token }) {
                 isClosable: true
             })
         } catch (e) {
+            setLoading(false)
             toast({
                 title: "Erro.",
                 description: e.message,
@@ -242,41 +276,55 @@ export default function Contract({ token }) {
         }
     }
 
+    async function getContractPDF(contractId) {
+        const response = await client.query({
+            query: GET_CONTRACT_BY_ID,
+            variables: { _id: contractId }
+        })
+        const contract = response.data.contract.data[0]
+        const clauses = await client.query({
+            query: GET_FIELDS,
+            variables: { contractId: contractId }
+        })
+
+        const initialClauseOrder = []
+        let initialClauses = {}
+        Array.from(clauses.data.fields.data).map(clause => {
+            initialClauseOrder.push(clause._id)
+            initialClauses[clause._id] = {
+                _id: clause._id,
+                content: clause.text
+            }
+        })
+
+        const blob = await pdf(ContractPDF({
+            contract,
+            clauses: initialClauses,
+            order: initialClauseOrder,
+            signers: contract.signers
+        })).toString()
+
+        return Buffer.from(blob).toString('base64')
+    }
+
     async function handleChangeStatus(cardId, sourceLaneId, targetLaneId) {
         if (targetLaneId == 'SIGNED') {
-            const response = await client.query({
-                query: GET_CONTRACT_BY_ID,
-                variables: { _id: cardId }
-            })
-            const contract = response.data.contract.data[0]
-            const clauses = await client.query({
-                query: GET_FIELDS,
-                variables: { contractId: cardId }
-            })
+            if (contractToSign.contractId == '') {
+                const response = await estimateContract({ variables: { estimateContractInput: { contractId: cardId } } })
+                const gasPrice = response.data.estimateContract.data
+                const tax = round(gasPrice * 0.30, 2)
+                const reservedValue = round(gasPrice * 0.1, 2)
+                setContractToSign({
+                    contractId: cardId,
+                    gasPrice,
+                    tax,
+                    reservedValue,
+                    total: gasPrice + tax + reservedValue
+                })
+                onEstimatedGasOpen()
+            }
 
-            const initialClauseOrder = []
-            let initialClauses = {}
-            Array.from(clauses.data.fields.data).map(clause => {
-                initialClauseOrder.push(clause._id)
-                initialClauses[clause._id] = {
-                    _id: clause._id,
-                    content: clause.text
-                }
-            })
-
-            const blob = await pdf(ContractPDF({
-                contract,
-                clauses: initialClauses,
-                order: initialClauseOrder,
-                signers: contract.signers
-            })).toString()
-            const base64 = Buffer.from(blob).toString('base64')
-
-            return handleCardUpdate({
-                id: cardId,
-                status: targetLaneId,
-                base64
-            })
+            return
         }
 
         handleCardUpdate({
@@ -325,9 +373,57 @@ export default function Contract({ token }) {
                 isOpen={isDeleteOpen}
                 onClose={onDeleteClose}
                 handleSuccess={() => handleDelete(null, true)}
-                loading={isDeleteLoading}
+                loading={isLoading}
             >
                 <Text>Você deseja apagar este registro?</Text>
+            </DefaultModal>
+            <DefaultModal
+                isOpen={isEstimatedGasOpen}
+                onClose={() => {
+                    setContractToSign({ contractId: '', gasPrice: 0, tax: 0, reservedValue: 0, total: 0 })
+                    onEstimatedGasClose()
+                }}
+                handleSuccess={async () => {
+                    setLoading(true)
+                    handleCardUpdate({
+                        id: contractToSign.contractId,
+                        status: 'SIGNED',
+                        base64: await getContractPDF(contractToSign.contractId),
+                        gasPrice: contractToSign.gasPrice,
+                        tax: contractToSign.tax,
+                        reservedValue: contractToSign.reservedValue
+                    })
+                }}
+                loading={isLoading}
+                size='2xl'
+                btnSuccessText="Confirmo"
+                btnCancelText="Cancelar"
+                modalName="Aviso"
+            >
+                <Text textAlign='justify' mb='4'>
+                    Ao enviar o contrato para a Blockchain, o valor abaixo será reservado da sua conta.
+                    Após a confirmação da transação na rede, o valor será debitado da sua conta.
+                    Ao clicar em confirmar, você concorda com o preço estabelecido e permite que o valor seja reservado da sua conta.
+                </Text>
+                <Text fontWeight='600'>Estimativa do valor</Text>
+                <Flex flexDir='column' alignItems='flex-end'>
+                    <Text fontWeight='600' color='green.500' fontSize='1.2rem'>{currencyFormatter(contractToSign.gasPrice)}</Text>
+                    <Text fontWeight='600' color='green.500' fontSize='1.2rem'>+ {currencyFormatter(contractToSign.tax)}</Text>
+                    <Text fontWeight='600' color='green.500' fontSize='1.2rem'>+ {currencyFormatter(contractToSign.reservedValue)}</Text>
+                    <Box w='50%' h='1px' my='2' border='1px solid rgba(0, 0, 0, 0.1)'></Box>
+                    <Text fontWeight='600' textTransform='uppercase' color='blackAlpha.700'>
+                        Total reservado: <Text d='inline-block' color='blackAlpha.800'>{currencyFormatter(contractToSign.total)}</Text>
+                    </Text>
+                    <Text fontWeight='600' textTransform='uppercase' color='blackAlpha.700'>
+                        Seus créditos: <Text d='inline-block' color='blackAlpha.800'>{currencyFormatter(user.credit)}</Text>
+                    </Text>
+                    <Text fontWeight='600' textTransform='uppercase' color='blackAlpha.700'>
+                        Créditos restantes: <Text d='inline-block' color={user.credit - contractToSign.total < 0 ? 'red.500' : 'green.500'}>{currencyFormatter(user.credit - contractToSign.total)}</Text>
+                    </Text>
+                </Flex>
+                <Text textAlign='justify' mt='6' color='blackAlpha.600' textTransform='uppercase' fontSize='0.8rem'>
+                    Obs: 10% do valor será reservado para a variação da estimativa. Este valor será devolvido caso não seja utilizado.
+                </Text>
             </DefaultModal>
 
             <Flex justifyContent="space-between" mb='1' w='100%'>
@@ -356,7 +452,7 @@ export default function Contract({ token }) {
                 onLaneScroll={(requestedPage, laneId) => handleScroll(requestedPage, laneId)}
 
             />
-        </Layout>
+        </Layout >
     )
 }
 

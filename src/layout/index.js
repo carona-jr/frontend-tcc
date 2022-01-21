@@ -134,7 +134,7 @@ export default function Layout({ children, token, router, title, breadcrumbs = [
                                             }}>Minha Conta</MenuItem>
                                             <MenuItem onClick={() => {
                                                 router.push('/credit')
-                                            }}>Pagamentos</MenuItem>
+                                            }}>Meus créditos</MenuItem>
                                             <MenuItem onClick={() => {
                                                 removeCookie('token')
                                                 router.reload()

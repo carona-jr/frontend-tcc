@@ -31,9 +31,26 @@ const signerColorStatus = {
     CO_RECEIVED: 'var(--chakra-colors-blue-800)'
 }
 
+const transactionColorStatus = {
+    BG_WAITING: 'var(--chakra-colors-yellow-100)',
+    BG_FAILED: 'var(--chakra-colors-red-100)',
+    BG_APPROVED: 'var(--chakra-colors-green-100)',
+    CO_WAITING: 'var(--chakra-colors-yellow-800)',
+    CO_FAILED: 'var(--chakra-colors-red-800)',
+    CO_APPROVED: 'var(--chakra-colors-green-800)'
+}
+
+const transactionNameStatus = {
+    WAITING: 'Ag. Aprovação',
+    FAILED: 'Reprovado',
+    APPROVED: 'Aprovado'
+}
+
 export {
     contractStatus,
     contractColorStatus,
     contractNameStatus,
-    signerColorStatus
+    signerColorStatus,
+    transactionColorStatus,
+    transactionNameStatus
 }

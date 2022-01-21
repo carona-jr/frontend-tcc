@@ -121,9 +121,9 @@ export default function User({ token, data, coupons }) {
     ]
 
     return (
-        <Layout token={token} router={router} title="Seus créditos" breadcrumbs={breadcrumbItens}>
+        <Layout token={token} router={router} title="Meus créditos" breadcrumbs={breadcrumbItens}>
             <Head>
-                <title>Créditos</title>
+                <title>Meus Créditos</title>
             </Head>
 
             <Flex flexDir='column' alignItems='center' my="5">

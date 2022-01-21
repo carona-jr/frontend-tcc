@@ -44,8 +44,13 @@ const GET_ALL_CONTRACT = gql`
                 ipfsHash
                 ethHash
                 createdAt
-
                 status
+                gasPrice
+                tax
+                reservedValue
+                realGasPrice
+                transactionId
+                transactionStatus
             }
         }
     }
@@ -57,19 +62,25 @@ const GET_ALL_CONTRACT_GROUP = gql`
             message
             total
             data {
-                _id,
-                total,
+                _id
+                total
                 contractsByGroup {
-                    _id,
-                    title,
-                    subtitle,
-                    ipfsHash,
-                    ethHash,
-                    createdAt,
+                    _id
+                    title
+                    subtitle
+                    ipfsHash
+                    ethHash
+                    createdAt
                     ownerId {
-                        _id,
+                        _id
                         name
                     }
+                    gasPrice
+                    tax
+                    reservedValue
+                    realGasPrice
+                    transactionId
+                    transactionStatus
                 }
             }
         }
@@ -82,27 +93,33 @@ const GET_CONTRACT_BY_ID = gql`
             message
             total
             data {
-                _id,
-                title,
-                subtitle,
-                ipfsHash,
-                ethHash,
+                _id
+                title
+                subtitle
+                ipfsHash
+                ethHash
                 signers {
-                    _id,
-                    userId,
-                    name,
-                    email,
-                    document,
-                    signerStatus,
-                    createdAt,
-                    updatedAt
-                },
-                createdAt,
-                ownerId {
-                    _id,
+                    _id
+                    userId
                     name
-                },
+                    email
+                    document
+                    signerStatus
+                    createdAt
+                    updatedAt
+                }
+                createdAt
+                ownerId {
+                    _id
+                    name
+                }
                 status
+                gasPrice
+                tax
+                reservedValue
+                realGasPrice
+                transactionId
+                transactionStatus
             }
         }
     }
@@ -144,6 +161,17 @@ const SIGN_CONTRACT = gql`
     }
 `
 
+const ESTIMATE_CONTRACT = gql`
+    mutation estimateContract($estimateContractInput: EstimateContractInput!) {
+        estimateContract(estimateContractInput: $estimateContractInput) {
+            status,
+            code,
+            message,
+            data
+        }
+    }    
+`
+
 export {
     NEW_CONTRACT,
     UPDATE_CONTRACT,
@@ -153,5 +181,6 @@ export {
     GET_CONTRACT_FILE,
     SEND_CONTRACT,
     NEW_SIGNER,
-    SIGN_CONTRACT
+    SIGN_CONTRACT,
+    ESTIMATE_CONTRACT
 }
