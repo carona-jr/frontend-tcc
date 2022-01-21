@@ -9,7 +9,7 @@ import DefaultModal from '../modal'
 import { SIGN_CONTRACT } from '../../graphql'
 import { useMutation } from '@apollo/client'
 
-export default function SignerModalButton({ contractId, currentUserId }) {
+export default function SignerModalButton({ contractId, currentUserId, signId }) {
     // Signers
     const { isOpen: isSignerOpen, onOpen: onSignerOpen, onClose: onSignerClose } = useDisclosure()
 
@@ -42,7 +42,7 @@ export default function SignerModalButton({ contractId, currentUserId }) {
                         mr='5'
                         onClick={() => {signContract({ variables: {
                             signContractInput: {
-                                contractId, userId: currentUserId
+                                contractId, userId: currentUserId, signId
                             }
                         } })
                         onSignerClose()

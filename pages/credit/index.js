@@ -106,7 +106,6 @@ export default function User({ token, data, coupons }) {
 
         setPage(page + 1)
         setItems([...items, ...response.data.findCoupons.data])
-        console.log("🚀 ~ file: index.js ~ line 93 ~ fetchMoreData ~ response.data.findCoupons.data", [...items, ...response.data.findCoupons.data])
     }
 
     const breadcrumbItens = [
@@ -135,7 +134,7 @@ export default function User({ token, data, coupons }) {
                     <Text fontSize='1rem' fontWeight='500' color='blackAlpha.700'>reservados</Text>
                 </Flex>
                 <Box mb='5' minW="300px">
-                    <Input placeholder='cole o código aqui para adicionar mais crédito' size='md' onChange={(e) => { setCode(e.target.value) }} />
+                    <Input placeholder='cole o código aqui para adicionar mais crédito' size='md' onChange={e => { setCode(e.target.value) }} />
                 </Box>
                 <Button
                     colorScheme="blue"

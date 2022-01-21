@@ -6,7 +6,7 @@ import Head from 'next/head'
 // GraphQL
 import { useApolloClient, useMutation } from '@apollo/client'
 import { getApolloClient } from '../../lib/apolloNextClient'
-import { GET_CONTRACT_BY_ID, GET_FIELDS, ADD_FIELD, UPDATE_FIELD, ME } from '../../src/graphql'
+import { GET_CONTRACT_BY_ID, GET_FIELDS, ADD_FIELD, UPDATE_FIELD, ME, REMOVE_SIGNER } from '../../src/graphql'
 
 // Icons
 import { FaSearch, FaPen, FaTrash, FaBold, FaItalic, FaUnderline, FaPlus, FaHeading, FaListUl, FaListOl } from 'react-icons/fa'
@@ -98,6 +98,10 @@ export default function Contract({ token, data, querySigner, initialClauseOrder,
         // Facilitate reordering of the columns
         columnOrder: ['clause']
     })
+
+    // Sign
+    const [removeSigner, { data: removeResult, loading, error }] = useMutation(REMOVE_SIGNER)
+
 
     // Signers List
     const { isOpen: isAddSignersOpen, onOpen: onAddSignersOpen, onClose: onAddSignersClose } = useDisclosure()
@@ -240,20 +244,33 @@ export default function Contract({ token, data, querySigner, initialClauseOrder,
         })
     }
 
-    function handleEditSigner(_id) {
+    async function handleEditSigner(_id) {
         const data = signersList.find(x => x._id == _id)
+
         setSigner(data)
         setSignersMethod('UPDATE')
         onAddSignersOpen()
     }
 
-    function handleDeleteSigner(_id) {
+    async function handleDeleteSigner(_id) {
+        try {
+            await removeSigner({
+                variables: {
+                    signId: _id,
+                    contractId: data._id
+                }
+            })
+        } catch (e) {
+            console.error(e)
+        }
+
         const list = signersList.filter(x => x._id != _id)
         setSignersList(list)
     }
 
-    async function handleSign(userId) {
-        setSigner(userId)
+    async function handleSign(_id) {
+        const data = signersList.find(x => x._id == _id)
+        setSigner(data)
     }
 
     const breadcrumbItens = [
@@ -476,11 +493,14 @@ export default function Contract({ token, data, querySigner, initialClauseOrder,
                                                     s.userId === currenteUserId ?
                                                         <SignerModalButton
                                                             contractId={data._id}
-                                                            currentUserId={ currenteUserId } /> : <></>
+                                                            currentUserId={ currenteUserId }
+                                                            signId={s._id} /> : <></>
                                                 }
                                                 {
                                                     allowEdit ? <Box fontSize="14px" cursor='pointer'>
-                                                        <FaPen onClick={() => handleEditSigner(s._id)} style={{ marginBottom: '8px' }} />
+                                                        <FaPen onClick={() => {
+                                                            handleEditSigner(s._id)
+                                                        }} style={{ marginBottom: '8px' }} />
                                                         <FaTrash onClick={() => handleDeleteSigner(s._id)} />
                                                     </Box> : <></>
                                                 }

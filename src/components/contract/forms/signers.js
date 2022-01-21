@@ -18,8 +18,12 @@ import { useState, useRef } from 'react'
 import { Formik, Form, Field } from 'formik'
 import { createObjectID } from 'mongo-object-reader'
 import { useMutation } from '@apollo/client'
-import { NEW_SIGNER, UPDATE_CONTRACT } from '../../../graphql'
+import { NEW_SIGNER, UPDATE_SIGNER } from '../../../graphql'
 import { useRouter } from 'next/router'
+import { cpf, cnpj } from 'cpf-cnpj-validator'
+import validator from 'validator'
+
+import _omit from 'lodash/omit'
 
 export default function Signers({ isOpen, onClose, data, method, list, setList }) {
 
@@ -28,6 +32,7 @@ export default function Signers({ isOpen, onClose, data, method, list, setList }
     const toast = useToast()
     const user = useSelector(state => state.User)
     const [addSigner] = useMutation(NEW_SIGNER)
+    const [updateSigner] = useMutation(UPDATE_SIGNER)
     // const [updateContract] = useMutation(UPDATE_CONTRACT)
     const [saving, setSaving] = useState(false)
 
@@ -41,6 +46,12 @@ export default function Signers({ isOpen, onClose, data, method, list, setList }
 
         if (!value)
             error = `${type} é obrigatório`
+
+        if (type === 'document' && !cpf.isValid(value))
+            error = 'CPF inválido'
+
+        if (type == 'email' && !validator.isEmail(value))
+            error = `Email inválido`
 
         return error
     }
@@ -72,12 +83,20 @@ export default function Signers({ isOpen, onClose, data, method, list, setList }
                                     if (response.data.setSigner.code != 200)
                                         throw new Error()
                                 }
-                                // else {
-                                //     const response = await updateContract({ variables: { updateContractInput: { ...values } } })
-
-                                //     if (response.data.updateContract.code != 200)
-                                //         throw new Error()
-                                // }
+                                else {
+                                    const res = await updateSigner({
+                                        variables: {
+                                            signId: data._id,
+                                            signerInput: {
+                                                contractId: slug,
+                                                ..._omit(values, ['createdAt',
+                                                    'signerStatus',
+                                                    'updatedAt',
+                                                    'userId', '__typename', '_id'])
+                                            }
+                                        }
+                                    })
+                                }
 
                                 if (method == 'CREATE') {
                                     setList([...list, {
@@ -92,6 +111,7 @@ export default function Signers({ isOpen, onClose, data, method, list, setList }
                                     data.name = values.name
                                     data.email = values.email
                                     data.document = values.document
+
                                 }
 
                                 toast({
@@ -126,7 +146,7 @@ export default function Signers({ isOpen, onClose, data, method, list, setList }
                                         </FormControl>
                                     )}
                                 </Field>
-                                <Field name="email" validate={value => validate('descrição', value)}>
+                                <Field name="email" validate={value => validate('email', value)}>
                                     {({ field, form }) => (
                                         <FormControl isInvalid={form.errors.email && form.touched.email} isRequired mb='25px'>
                                             <FormLabel htmlFor="email">E-mail</FormLabel>
@@ -134,11 +154,11 @@ export default function Signers({ isOpen, onClose, data, method, list, setList }
                                         </FormControl>
                                     )}
                                 </Field>
-                                <Field name="document" validate={value => validate('descrição', value)}>
+                                <Field name="document" validate={value => validate('document', value)}>
                                     {({ field, form }) => (
                                         <FormControl isInvalid={form.errors.document && form.touched.document} isRequired mb='25px'>
                                             <FormLabel htmlFor="document">Documento</FormLabel>
-                                            <Input {...field} id="document" placeholder="joao@examplo.com" type='text' />
+                                            <Input {...field} id="document" placeholder="000.000.000-00" type='text' />
                                         </FormControl>
                                     )}
                                 </Field>
