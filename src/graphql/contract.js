@@ -49,7 +49,6 @@ const GET_ALL_CONTRACT = gql`
                 tax
                 reservedValue
                 realGasPrice
-                transactionId
                 transactionStatus
             }
         }
@@ -79,7 +78,6 @@ const GET_ALL_CONTRACT_GROUP = gql`
                     tax
                     reservedValue
                     realGasPrice
-                    transactionId
                     transactionStatus
                 }
             }
@@ -118,7 +116,6 @@ const GET_CONTRACT_BY_ID = gql`
                 tax
                 reservedValue
                 realGasPrice
-                transactionId
                 transactionStatus
             }
         }
