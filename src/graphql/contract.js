@@ -47,6 +47,7 @@ const GET_ALL_CONTRACT = gql`
                 status
                 gasPrice
                 tax
+                ethTxHash
                 reservedValue
                 realGasPrice
                 transactionStatus
@@ -76,6 +77,7 @@ const GET_ALL_CONTRACT_GROUP = gql`
                     }
                     gasPrice
                     tax
+                    ethTxHash
                     reservedValue
                     realGasPrice
                     transactionStatus
@@ -113,6 +115,7 @@ const GET_CONTRACT_BY_ID = gql`
                 }
                 status
                 gasPrice
+                ethTxHash
                 tax
                 reservedValue
                 realGasPrice
@@ -165,8 +168,8 @@ const SIGN_CONTRACT = gql`
 `
 
 const ESTIMATE_CONTRACT = gql`
-    mutation estimateContract($estimateContractInput: EstimateContractInput!) {
-        estimateContract(estimateContractInput: $estimateContractInput) {
+    mutation estimateContract($contractGenericInput: ContractGenericInput!) {
+        estimateContract(contractGenericInput: $contractGenericInput) {
             status,
             code,
             message,
@@ -181,6 +184,16 @@ const UPDATE_SIGNER = gql`
     }
 `
 
+const UPDATE_TRANSACTION_STATUS = gql`
+    mutation updateTransactionStatus($contractGenericInput: ContractGenericInput!) {
+        updateTransactionStatus(contractGenericInput: $contractGenericInput) {
+            status,
+            code,
+            message
+        }
+    }  
+`
+
 export {
     NEW_CONTRACT,
     UPDATE_CONTRACT,
@@ -193,5 +206,6 @@ export {
     SIGN_CONTRACT,
     ESTIMATE_CONTRACT,
     REMOVE_SIGNER,
-    UPDATE_SIGNER
+    UPDATE_SIGNER,
+    UPDATE_TRANSACTION_STATUS
 }

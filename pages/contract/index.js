@@ -6,17 +6,18 @@ import { useSelector } from 'react-redux'
 
 // GraphQL
 import { useApolloClient, useMutation } from '@apollo/client'
-import { GET_ALL_CONTRACT_GROUP, UPDATE_CONTRACT, GET_FIELDS, GET_CONTRACT_BY_ID, ESTIMATE_CONTRACT } from '../../src/graphql'
+import { GET_ALL_CONTRACT_GROUP, UPDATE_CONTRACT, GET_FIELDS, GET_CONTRACT_BY_ID, ESTIMATE_CONTRACT, UPDATE_TRANSACTION_STATUS } from '../../src/graphql'
 
 // Icons
 import { RiFilePaper2Fill } from 'react-icons/ri'
+import { MdRefresh } from 'react-icons/md'
 
 // Others
 import cookie from 'cookie'
 import Board from 'react-trello'
 import { isNull, round } from 'lodash'
 import { pdf } from '@react-pdf/renderer'
-import { Button, Flex, useDisclosure, BreadcrumbItem, BreadcrumbLink, Text, useToast, Box, Input } from '@chakra-ui/react'
+import { Button, Flex, useDisclosure, BreadcrumbItem, BreadcrumbLink, Text, useToast, Box, Input, IconButton } from '@chakra-ui/react'
 import { currencyFormatter, getDate } from '../../src/utils'
 
 // Components
@@ -41,6 +42,7 @@ export default function Contract({ token }) {
     const [formMethod] = useState('CREATE')
     const [updateContract] = useMutation(UPDATE_CONTRACT)
     const [estimateContract] = useMutation(ESTIMATE_CONTRACT)
+    const [updateTransactionStatus] = useMutation(UPDATE_TRANSACTION_STATUS)
     const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure()
     const [deleteCallback, setDeleteCallback] = useState(null)
     const [isLoading, setLoading] = useState(false)
@@ -151,12 +153,11 @@ export default function Contract({ token }) {
                         })
 
                         if (card.transactionStatus == 'APPROVED')
-                            cardValue.tags.push({ bgcolor: 'transparent', color: '#000', title: <Box>{`#${card.transactionId}`}</Box> })
+                            cardValue.tags.push({ bgcolor: 'transparent', color: '#000', title: <Box fontSize='0.6rem'>{`#${card.ethTxHash}`}</Box> })
                     }
                     else {
                         cardValue.tags.push({ bgcolor: colorStatus[`BG_${st}`], color: colorStatus[`CO_${st}`], title: st })
                     }
-
 
                     return cardValue
                 })
@@ -310,7 +311,7 @@ export default function Contract({ token }) {
     async function handleChangeStatus(cardId, sourceLaneId, targetLaneId) {
         if (targetLaneId == 'SIGNED') {
             if (contractToSign.contractId == '') {
-                const response = await estimateContract({ variables: { estimateContractInput: { contractId: cardId } } })
+                const response = await estimateContract({ variables: { contractGenericInput: { contractId: cardId } } })
                 const gasPrice = response.data.estimateContract.data
                 const tax = round(gasPrice * 0.30, 2)
                 const reservedValue = round(gasPrice * 0.1, 2)
@@ -431,15 +432,33 @@ export default function Contract({ token }) {
                     <Input value={filter || ''} w='30%' placeholder="pesquise..." onChange={e => setFilter(e.target.value)} />
                 </Box>
                 <Button
-                    colorScheme="teal"
-                    variant="outline"
+                    colorScheme='facebook'
+                    variant="solid"
                     onClick={() => {
                         setFormData({ title: '', subtitle: '' })
                         onAddOpen()
                     }}
                 >
-                    Novo
+                    Adicionar Contrato
                 </Button>
+                <IconButton
+                    ml="5"
+                    aria-label='Atualizar Lista'
+                    colorScheme='blackAlpha'
+                    variant='ghost'
+                    icon={<MdRefresh fontSize='2rem' />}
+                    onClick={async () => {
+                        getContracts()
+                        await updateTransactionStatus({ variables: { contractGenericInput: { contractId: "" } } })
+                        toast({
+                            title: "Sucesso.",
+                            description: "A lista de contratos foi atualizada",
+                            status: "success",
+                            duration: 3000,
+                            isClosable: true
+                        })
+                    }}
+                />
             </Flex>
             <Board
                 data={data}
