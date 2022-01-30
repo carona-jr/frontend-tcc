@@ -7,6 +7,7 @@ import {
 } from './contract'
 import { GET_FIELDS, ADD_FIELD, UPDATE_FIELD } from './field'
 import { DEPOSIT, FIND_COUPONS } from './coupon'
+import { FIND_LOGS } from './logs'
 
 export {
     LOGIN,
@@ -32,5 +33,6 @@ export {
     ESTIMATE_CONTRACT,
     REMOVE_SIGNER,
     UPDATE_SIGNER,
-    UPDATE_TRANSACTION_STATUS
+    UPDATE_TRANSACTION_STATUS,
+    FIND_LOGS
 }

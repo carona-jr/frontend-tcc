@@ -1,11 +1,11 @@
 // React
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/router'
 import Head from 'next/head'
 
 // GraphQL
 import { getApolloClient } from '../../lib/apolloNextClient'
-import { DEPOSIT, ME, FIND_COUPONS } from '../../src/graphql'
+import { DEPOSIT, ME, FIND_LOGS } from '../../src/graphql'
 import { useMutation, useApolloClient } from '@apollo/client'
 
 // Icons
@@ -14,7 +14,7 @@ import { FaUser } from 'react-icons/fa'
 // Others
 import cookie from 'cookie'
 import { Flex, BreadcrumbItem, BreadcrumbLink, Text, useToast, Button, Input, Box, Spinner } from '@chakra-ui/react'
-import { currencyFormatter, getDate } from '../../src/utils'
+import { currencyFormatter } from '../../src/utils'
 import InfiniteScroll from "react-infinite-scroll-component"
 
 // Components
@@ -58,18 +58,19 @@ export default function User({ token, data, coupons }) {
             setCode('')
 
             const responseCoupons = await client.query({
-                query: FIND_COUPONS,
+                query: FIND_LOGS,
                 variables: {
-                    couponInputs: {
+                    logInputs: {
                         limit: 10,
-                        skip: 0
+                        skip: 0,
+                        type: 'CREDIT'
                     }
                 },
                 fetchPolicy: 'no-cache'
             })
 
             setPage(1)
-            setItems([...responseCoupons.data.findCoupons.data])
+            setItems([...responseCoupons.data.findLogs.data])
 
             toast({
                 title: "Sucesso.",
@@ -94,18 +95,19 @@ export default function User({ token, data, coupons }) {
             return setHasMore(false)
 
         const response = await client.query({
-            query: FIND_COUPONS,
+            query: FIND_LOGS,
             variables: {
-                couponInputs: {
+                logInputs: {
                     limit: (page + 1) * 10,
-                    skip: page * 10
+                    skip: page * 10,
+                    type: 'CREDIT'
                 }
             },
             fetchPolicy: 'no-cache'
         })
 
         setPage(page + 1)
-        setItems([...items, ...response.data.findCoupons.data])
+        setItems([...items, ...response.data.findLogs.data])
     }
 
     const breadcrumbItens = [
@@ -179,7 +181,7 @@ export default function User({ token, data, coupons }) {
                             items.map((i, n) => {
                                 return (
                                     <Box key={i._id} border='1px solid rgba(0, 0, 0, 0.1)' p='3' my='4'>
-                                        {currencyFormatter(i.value)} adicionado em {getDate(i.updatedAt)}
+                                        {i.description}
                                     </Box>
                                 )
                             })
@@ -209,11 +211,12 @@ export async function getServerSideProps({ req }) {
     })
 
     const couponUsage = await apollo.query({
-        query: FIND_COUPONS,
+        query: FIND_LOGS,
         variables: {
-            couponInputs: {
+            logInputs: {
                 limit: 10,
-                skip: 0
+                skip: 0,
+                type: 'CREDIT'
             }
         }
     })
@@ -222,7 +225,7 @@ export async function getServerSideProps({ req }) {
         props: {
             token: cookies.token,
             data: response.data.me,
-            coupons: couponUsage.data.findCoupons
+            coupons: couponUsage.data.findLogs
         }
     }
 }

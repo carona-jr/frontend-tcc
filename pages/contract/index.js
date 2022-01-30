@@ -448,8 +448,8 @@ export default function Contract({ token }) {
                     variant='ghost'
                     icon={<MdRefresh fontSize='2rem' />}
                     onClick={async () => {
-                        getContracts()
                         await updateTransactionStatus({ variables: { contractGenericInput: { contractId: "" } } })
+                        getContracts()
                         toast({
                             title: "Sucesso.",
                             description: "A lista de contratos foi atualizada",
