@@ -180,7 +180,7 @@ export default function User({ token, data, coupons }) {
                         {
                             items.map((i, n) => {
                                 return (
-                                    <Box key={i._id} border='1px solid rgba(0, 0, 0, 0.1)' p='3' my='4'>
+                                    <Box key={i._id} border='1px solid rgba(0, 0, 0, 0.1)' p='3' my='4' _hover={{ bgColor: 'var(--chakra-colors-blackAlpha-100)', cursor: 'pointer' }}>
                                         {i.description}
                                     </Box>
                                 )

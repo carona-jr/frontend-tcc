@@ -102,7 +102,7 @@ export default function Home() {
 export function getServerSideProps({ req }) {
     const cookies = cookie.parse(req.headers.cookie || '')
 
-    if (cookies.token)
+    if (cookies.token && cookies.token != 'undefined')
         return {
             redirect: {
                 destination: '/home',

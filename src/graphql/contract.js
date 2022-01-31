@@ -31,8 +31,8 @@ const UPDATE_CONTRACT = gql`
 `
 
 const GET_ALL_CONTRACT = gql`
-    query contracts($skip: Int, $limit: Int, $status: String) {
-        contracts(skip: $skip, limit: $limit, status: $status){ 
+    query contracts($contractsInput: ContractsInput!) {
+        contracts(contractsInput: $contractsInput){ 
             code
             status
             message
@@ -51,6 +51,10 @@ const GET_ALL_CONTRACT = gql`
                 reservedValue
                 realGasPrice
                 transactionStatus
+                ownerId {
+                    _id
+                    name
+                }
             }
         }
     }

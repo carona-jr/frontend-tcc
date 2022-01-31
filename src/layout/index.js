@@ -157,7 +157,7 @@ export default function Layout({ children, token, router, title, breadcrumbs = [
                                 <BreadcrumbLink href="/home">
                                     <Flex alignItems="center">
                                         <FaHome className='breadcrumb-item' />
-                                        <Text display={['none', 'block']} pl="2">Home</Text>
+                                        <Text display={['none', 'block']} pl="2">Início</Text>
                                     </Flex>
                                 </BreadcrumbLink>
                             </BreadcrumbItem>

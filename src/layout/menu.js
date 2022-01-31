@@ -8,7 +8,7 @@ export default [
         items: [
             {
                 icon: <FaHome fontSize='32px' />,
-                description: 'Home',
+                description: 'Início',
                 navigate: '/home'
             },
             {

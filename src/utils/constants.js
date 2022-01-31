@@ -46,11 +46,88 @@ const transactionNameStatus = {
     APPROVED: 'Aprovado'
 }
 
+const pieChartDef = [
+    {
+        id: 'dots',
+        type: 'patternDots',
+        background: 'inherit',
+        color: 'rgba(255, 255, 255, 0.3)',
+        size: 4,
+        padding: 1,
+        stagger: true
+    },
+    {
+        id: 'lines',
+        type: 'patternLines',
+        background: 'inherit',
+        color: 'rgba(255, 255, 255, 0.3)',
+        rotation: -45,
+        lineWidth: 6,
+        spacing: 10
+    }
+]
+
+const pieChartFill = [
+    {
+        match: {
+            id: 'OPENED'
+        },
+        id: 'dots'
+    },
+    {
+        match: {
+            id: 'PENDING'
+        },
+        id: 'lines'
+    },
+    {
+        match: {
+            id: 'SIGNED'
+        },
+        id: 'dots'
+    },
+    {
+        match: {
+            id: 'SENDED'
+        },
+        id: 'lines'
+    }
+]
+
+const pieChartLegend = [
+    {
+        anchor: 'bottom',
+        direction: 'row',
+        justify: false,
+        translateX: 0,
+        translateY: 56,
+        itemsSpacing: 16,
+        itemWidth: 100,
+        itemHeight: 18,
+        itemTextColor: '#999',
+        itemDirection: 'left-to-right',
+        itemOpacity: 1,
+        symbolSize: 18,
+        symbolShape: 'circle',
+        effects: [
+            {
+                on: 'hover',
+                style: {
+                    itemTextColor: '#000'
+                }
+            }
+        ]
+    }
+]
+
 export {
     contractStatus,
     contractColorStatus,
     contractNameStatus,
     signerColorStatus,
     transactionColorStatus,
-    transactionNameStatus
+    transactionNameStatus,
+    pieChartDef,
+    pieChartFill,
+    pieChartLegend
 }

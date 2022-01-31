@@ -14,7 +14,10 @@
     "@chakra-ui/react": "^1.6.4",
     "@emotion/react": "11",
     "@emotion/styled": "11",
+    "@nivo/core": "^0.79.0",
+    "@nivo/pie": "^0.79.1",
     "@react-pdf/renderer": "^2.0.21",
+    "add": "^2.0.6",
     "axios": "^0.24.0",
     "cookie": "^0.4.1",
     "cpf-cnpj-validator": "^1.0.3",
@@ -44,7 +47,8 @@
     "slate-react": "^0.70.0",
     "styled-components": "^5.3.0",
     "swr": "^0.5.6",
-    "validator": "^13.7.0"
+    "validator": "^13.7.0",
+    "yarn": "^1.22.17"
   },
   "devDependencies": {
     "babel-plugin-styled-components": "^1.12.0",
