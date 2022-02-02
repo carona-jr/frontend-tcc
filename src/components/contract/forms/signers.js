@@ -13,15 +13,20 @@ import {
     Input,
     useToast
 } from '@chakra-ui/react'
+
+import AsyncCreatableSelect from 'react-select/async-creatable'
+import { useQuery, useMutation } from '@apollo/client'
+import _pick from 'lodash/pick'
+
 import { useSelector } from 'react-redux'
 import { useState, useRef } from 'react'
 import { Formik, Form, Field } from 'formik'
 import { createObjectID } from 'mongo-object-reader'
-import { useMutation } from '@apollo/client'
-import { NEW_SIGNER, UPDATE_SIGNER } from '../../../graphql'
+import { NEW_SIGNER, UPDATE_SIGNER, FIND_USERS, ME } from '../../../graphql'
 import { useRouter } from 'next/router'
-import { cpf, cnpj } from 'cpf-cnpj-validator'
+import { cpf } from 'cpf-cnpj-validator'
 import validator from 'validator'
+import InputMask from 'react-input-mask'
 
 import _omit from 'lodash/omit'
 
@@ -33,8 +38,12 @@ export default function Signers({ isOpen, onClose, data, method, list, setList }
     const user = useSelector(state => state.User)
     const [addSigner] = useMutation(NEW_SIGNER)
     const [updateSigner] = useMutation(UPDATE_SIGNER)
-    // const [updateContract] = useMutation(UPDATE_CONTRACT)
     const [saving, setSaving] = useState(false)
+    const [formValues, setFormValues] = useState({
+        name: '',
+        email: '',
+        document: ''
+    })
 
     function handleSubmit() {
         if (formRef.current)
@@ -56,6 +65,43 @@ export default function Signers({ isOpen, onClose, data, method, list, setList }
         return error
     }
 
+    const filterUser = inputValue => {
+        const selected = userOptions.filter(i =>
+            i.label?.toLowerCase().includes(inputValue.toLowerCase())
+        )
+
+        if (selected.length > 0) return selected
+
+        return [{ label: inputValue, value: inputValue, name: inputValue }]
+    }
+
+    const promiseOptions = inputValue =>
+        new Promise(resolve => {
+            setTimeout(() => {
+                resolve(filterUser(inputValue))
+            }, 1000)
+        })
+
+    let userOptions = []
+
+    const { data: findUsers } = useQuery(FIND_USERS, {
+        variables: {
+            userInputs: {
+                skip: 0,
+                limit: 50
+            }
+        }
+    })
+
+    const { data: queryMe } = useQuery(ME)
+
+    if (queryMe) {
+        const selectableUsers = queryMe.me.supervised.map(user => ({ label: user.name, value: user._id, ..._pick(user, ['document', 'email', 'name', '_id']) }))
+        selectableUsers.push({ label: queryMe.me.name, value: queryMe.me._id, ..._pick(queryMe.me, ['document', 'email', 'name', '_id']) })
+
+        userOptions = selectableUsers
+    }
+
     return (
         <Modal isOpen={isOpen} onClose={onClose} isCentered>
             <ModalOverlay />
@@ -67,6 +113,9 @@ export default function Signers({ isOpen, onClose, data, method, list, setList }
                         initialValues={data}
                         innerRef={formRef}
                         onSubmit={async (values, actions) => {
+                            const _values =
+                                { userId: values._id, ..._pick(values, ['name', 'document', 'email']) }
+
                             try {
                                 setSaving(true)
 
@@ -75,7 +124,7 @@ export default function Signers({ isOpen, onClose, data, method, list, setList }
                                         variables: {
                                             signerInput: {
                                                 contractId: slug,
-                                                ...values
+                                                ..._values
                                             }
                                         }
                                     })
@@ -89,10 +138,7 @@ export default function Signers({ isOpen, onClose, data, method, list, setList }
                                             signId: data._id,
                                             signerInput: {
                                                 contractId: slug,
-                                                ..._omit(values, ['createdAt',
-                                                    'signerStatus',
-                                                    'updatedAt',
-                                                    'userId', '__typename', '_id'])
+                                                ..._values
                                             }
                                         }
                                     })
@@ -100,17 +146,17 @@ export default function Signers({ isOpen, onClose, data, method, list, setList }
 
                                 if (method == 'CREATE') {
                                     setList([...list, {
-                                        ...values,
+                                        ..._values,
                                         _id: createObjectID(),
                                         createdAt: new Date().getTime(),
                                         signerStatus: 'NOT_SIGNED'
                                     }])
                                 } else {
-                                    const data = list.find(x => x._id == values._id)
+                                    const data = list.find(x => x.userId == values.userId)
 
-                                    data.name = values.name
-                                    data.email = values.email
-                                    data.document = values.document
+                                    data.name = _values.name
+                                    data.email = _values.email
+                                    data.document = _values.document
 
                                 }
 
@@ -142,7 +188,26 @@ export default function Signers({ isOpen, onClose, data, method, list, setList }
                                     {({ field, form }) => (
                                         <FormControl isInvalid={form.errors.name && form.touched.name} isRequired mb='25px'>
                                             <FormLabel htmlFor="name">Nome</FormLabel>
-                                            <Input {...field} id="name" placeholder="joão da silva" type='text' autoFocus />
+                                            {/* <Input {...field} id="name" placeholder="joão da silva" type='text' autoFocus /> */}
+                                            <AsyncCreatableSelect
+                                                cacheOptions
+                                                defaultOptions
+                                                loadOptions={promiseOptions}
+                                                onChange={values => {
+                                                    const _values = _omit(values, ['label', 'values'])
+                                                    Object.keys(_values).forEach(key => { props.setFieldValue(key, _values[key])})
+
+                                                    setFormValues({
+                                                        ...formValues,
+                                                        ...values
+                                                    })
+                                                }}
+                                                onCreateOption={ values => {
+                                                    props.setFieldValue('name', values)
+                                                    userOptions.push({ label: values, value: values, name: values })
+                                                    promiseOptions(values)
+                                                }}
+                                            />
                                         </FormControl>
                                     )}
                                 </Field>
@@ -156,9 +221,25 @@ export default function Signers({ isOpen, onClose, data, method, list, setList }
                                 </Field>
                                 <Field name="document" validate={value => validate('document', value)}>
                                     {({ field, form }) => (
-                                        <FormControl isInvalid={form.errors.document && form.touched.document} isRequired mb='25px'>
+                                        <FormControl isInvalid={form.errors.document && form.touched.document} isRequired mb='25px'
+                                            onChange={e => {
+                                                const type = e.target.value.length < 15 ? 'PESSOA_FISICA' : 'PESSOA_JURIDICA'
+
+                                                setFormValues({
+                                                    ...formValues,
+                                                    document: e.target.value,
+                                                    type
+                                                })
+
+                                                if (formRef.current.errors.type)
+                                                    delete formRef.current.errors.type
+
+                                                formRef.current.values.type = type
+                                            }}>
                                             <FormLabel htmlFor="document">Documento</FormLabel>
-                                            <Input {...field} id="document" placeholder="000.000.000-00" type='text' />
+                                            <InputMask {...field} mask={formValues.document.length < 15 ? '999.999.999-999' : '99.999.999/9999-99'} maskChar='' value={formValues.document}>
+                                                {inputProps => <Input {...inputProps} id="document" placeholder="123.456.789-11" type='text' maxLength='20' />}
+                                            </InputMask>
                                         </FormControl>
                                     )}
                                 </Field>

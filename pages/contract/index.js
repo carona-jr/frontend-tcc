@@ -28,6 +28,8 @@ import DefaultModal from '../../src/components/modal'
 import { contractStatus as status, contractColorStatus as colorStatus, contractNameStatus as nameStatus, transactionNameStatus, transactionColorStatus } from '../../src/utils/constants'
 import ContractPDF from '../../src/pdf/contract'
 
+import Cookies from 'universal-cookie'
+
 export default function Contract({ token }) {
     // General
     const router = useRouter()

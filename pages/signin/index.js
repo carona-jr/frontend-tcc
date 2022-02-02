@@ -36,7 +36,7 @@ import Navbar from '../../src/layout/navbar'
 
 export default function SignIn() {
     // eslint-disable-next-line no-unused-vars
-    const [cookie, setCookie] = useCookies(["user"])
+    const [cookies, setCookie, removeCookie] = useCookies(["user"])
     const [showPassword, setShowPassword] = useState(false)
     const { colorMode } = useColorMode()
     const toast = useToast()
@@ -164,7 +164,7 @@ export default function SignIn() {
                                     type="submit"
                                     mb='40px'
                                 >
-                                    Entrar
+                                Entrar
                                 </Button>
                             </Form>
                         )}

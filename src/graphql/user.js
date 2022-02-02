@@ -26,6 +26,9 @@ const ME = gql`
             }
             supervised {
                 _id
+                name
+                email
+                document
             }
             active
             credit

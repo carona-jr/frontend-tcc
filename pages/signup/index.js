@@ -46,6 +46,8 @@ export default function SignIn() {
     const [createUser] = useMutation(CREATE_USER)
     const router = useRouter()
 
+    const signature = router?.query?.s
+
     const formRef = useRef()
     const [saveFormData, setSaveFormData] = useState(false)
     const [formValues, setFormValues] = useState({
@@ -129,13 +131,14 @@ export default function SignIn() {
 
                                 const body = {
                                     ...values,
+                                    signature,
                                     phone: {
                                         ...values.phone,
                                         active: true
                                     }
                                 }
-
                                 delete body.confirmPassword
+
                                 await createUser({
                                     variables: {
                                         userInput: {
@@ -169,7 +172,7 @@ export default function SignIn() {
                             }
                         }}
                     >
-                        {(props) => (
+                        {props => (
                             <Form>
                                 <Grid templateColumns="repeat(12, 1fr)" gap={2}>
                                     <GridItem colSpan={12}>
