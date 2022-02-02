@@ -309,6 +309,9 @@ export default function Contract({ token }) {
     }
 
     async function handleChangeStatus(cardId, sourceLaneId, targetLaneId) {
+        if (sourceLaneId == 'SIGNED' && targetLaneId == 'SIGNED')
+            return
+
         if (targetLaneId == 'SIGNED') {
             if (contractToSign.contractId == '') {
                 const response = await estimateContract({ variables: { contractGenericInput: { contractId: cardId } } })
@@ -381,6 +384,7 @@ export default function Contract({ token }) {
             <DefaultModal
                 isOpen={isEstimatedGasOpen}
                 onClose={() => {
+                    getContracts()
                     setContractToSign({ contractId: '', gasPrice: 0, tax: 0, reservedValue: 0, total: 0 })
                     onEstimatedGasClose()
                 }}
@@ -397,7 +401,7 @@ export default function Contract({ token }) {
                 }}
                 loading={isLoading}
                 size='2xl'
-                btnSuccessText="Confirmo"
+                btnSuccessText="Aceito"
                 btnCancelText="Cancelar"
                 modalName="Aviso"
             >
