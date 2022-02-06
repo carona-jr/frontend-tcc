@@ -6,10 +6,10 @@ import {
 } from '@chakra-ui/react'
 import DefaultModal from '../modal'
 
-import { SIGN_CONTRACT } from '../../graphql'
+import { SIGN_CONTRACT, GET_CONTRACT_BY_ID } from '../../graphql'
 import { useMutation } from '@apollo/client'
 
-export default function SignerModalButton({ contractId, currentUserId, signId }) {
+export default function SignerModalButton({ contractId, currentUserId, signId, setSignersList, client }) {
     // Signers
     const { isOpen: isSignerOpen, onOpen: onSignerOpen, onClose: onSignerClose } = useDisclosure()
 
@@ -23,7 +23,7 @@ export default function SignerModalButton({ contractId, currentUserId, signId })
                 mr='2'
                 onClick={onSignerOpen}
             >
-            Assinar
+                Assinar
             </Button>
 
             <DefaultModal
@@ -39,24 +39,30 @@ export default function SignerModalButton({ contractId, currentUserId, signId })
                     <Button
                         colorScheme="whatsapp"
                         variant="ghost"
-                        mr='5'
-                        onClick={() => {signContract({ variables: {
-                            signContractInput: {
-                                contractId, userId: currentUserId, signId
-                            }
-                        } })
-                        onSignerClose()
+                        onClick={async () => {
+                            signContract({
+                                variables: {
+                                    signContractInput: {
+                                        contractId, userId: currentUserId, signId
+                                    }
+                                }
+                            })
+                            const response = await client.query({
+                                query: GET_CONTRACT_BY_ID,
+                                variables: { _id: contractId }
+                            })
+                            setSignersList(response.data.contract.data[0].signers)
+                            onSignerClose()
                         }}
                     >
-                Assinar
+                        Assinar
                     </Button>
                     <Button
                         colorScheme="red"
                         variant="ghost"
-                        mr='5'
                         onClick={onSignerClose}
                     >
-                Recusar
+                        Recusar
                     </Button>
                 </Flex>
             </DefaultModal>

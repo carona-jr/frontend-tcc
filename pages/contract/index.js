@@ -28,8 +28,6 @@ import DefaultModal from '../../src/components/modal'
 import { contractStatus as status, contractColorStatus as colorStatus, contractNameStatus as nameStatus, transactionNameStatus, transactionColorStatus } from '../../src/utils/constants'
 import ContractPDF from '../../src/pdf/contract'
 
-import Cookies from 'universal-cookie'
-
 export default function Contract({ token }) {
     // General
     const router = useRouter()
@@ -154,7 +152,7 @@ export default function Contract({ token }) {
                             title: card.transactionStatus
                         })
 
-                        if (card.transactionStatus == 'APPROVED')
+                        if (card.transactionStatus == 'APPROVED' || card.transactionStatus == 'FAILED')
                             cardValue.tags.push({ bgcolor: 'transparent', color: '#000', title: <Box fontSize='0.6rem'>{`#${card.ethTxHash}`}</Box> })
                     }
                     else {
@@ -311,7 +309,9 @@ export default function Contract({ token }) {
     }
 
     async function handleChangeStatus(cardId, sourceLaneId, targetLaneId) {
-        if (sourceLaneId == 'SIGNED' && targetLaneId == 'SIGNED')
+        const contract = data.lanes.find(x => x.id == sourceLaneId).cards.find(x => x.id == cardId)
+        console.log("🚀 ~ file: index.js ~ line 315 ~ handleChangeStatus ~ contract", contract)
+        if (sourceLaneId == 'SIGNED' && targetLaneId == 'SIGNED' && contract.transactionStatus != 'FAILED')
             return
 
         if (targetLaneId == 'SIGNED') {

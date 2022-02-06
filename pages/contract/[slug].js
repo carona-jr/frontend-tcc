@@ -11,6 +11,7 @@ import { GET_CONTRACT_BY_ID, GET_FIELDS, ADD_FIELD, UPDATE_FIELD, ME, REMOVE_SIG
 // Icons
 import { FaSearch, FaPen, FaTrash, FaBold, FaItalic, FaUnderline, FaPlus, FaHeading, FaListUl, FaListOl } from 'react-icons/fa'
 import { RiFilePaper2Fill, RiPrinterLine } from 'react-icons/ri'
+import { MdContentCopy } from 'react-icons/md'
 
 // Slate
 import { createEditor } from 'slate'
@@ -59,6 +60,7 @@ import {
     deserialize as htmlToObj
 } from '../../src/components/htmlEditor'
 import SignerModalButton from '../../src/components/contract/SignerModalButton'
+import { contractStatus as status, contractColorStatus as colorStatus, contractNameStatus as nameStatus, transactionNameStatus, transactionColorStatus } from '../../src/utils/constants'
 
 export default function Contract({ token, data, querySigner, initialClauseOrder, initialClauses, currenteUserId }) {
     const router = useRouter()
@@ -384,7 +386,33 @@ export default function Contract({ token, data, querySigner, initialClauseOrder,
                 method={signersMethod}
             />
 
-            <Flex justifyContent="flex-end" mb='4' w='100%'>
+            <Flex justifyContent="space-between" mb='4' w='100%'>
+                <Box>
+                    <Text fontSize={['10px', '12px', '16px']} fontWeight='600' color={colorStatus[`CO_${data.status}`]} display={data.status == 'SIGNED' ? 'none' : 'block'}>
+                        {data.status}
+                    </Text>
+                    <Text fontSize={['10px', '12px', '16px']} fontWeight='600' color={transactionColorStatus[`CO_${data.transactionStatus}`]} display={data.status == 'SIGNED' ? 'block' : 'none'}>
+                        {data.transactionStatus}
+                    </Text>
+                    <Flex alignItems='center' display={data.status == 'SIGNED' ? 'flex' : 'none'}>
+                        <Text mr='1' fontSize={['10px', '12px', '16px']} style={{ wordBreak: 'break-all' }}>{data.ethTxHash}</Text>
+                        <Button
+                            colorScheme="gray"
+                            variant='ghost'
+                            onClick={() => {
+                                const input = document.createElement('input')
+                                input.setAttribute('value', data.ethTxHash)
+                                document.body.appendChild(input)
+                                input.select()
+                                const result = document.execCommand('copy')
+                                document.body.removeChild(input)
+                                return result
+                            }}
+                        >
+                            <MdContentCopy style={{ fontSize: '18px' }} />
+                        </Button>
+                    </Flex>
+                </Box>
                 <Button
                     colorScheme="gray"
                     variant="outline"
@@ -408,6 +436,7 @@ export default function Contract({ token, data, querySigner, initialClauseOrder,
                                 <embed width="100%" height="100%" src="data:application/pdf;base64,${base64}" type="application/pdf" />
                             </body>
                         </html>`)
+                        newTab.document.close()
                     }}
                 >
                     <RiPrinterLine style={{ fontSize: '24px' }} />
@@ -490,11 +519,14 @@ export default function Contract({ token, data, querySigner, initialClauseOrder,
                                             <Flex justifyContent="space-between" alignItems='center'>
                                                 <Text>{s.name}</Text>
                                                 {
-                                                    s.userId === currenteUserId ?
+                                                    s.userId === currenteUserId && data.status == 'SENDED' ?
                                                         <SignerModalButton
                                                             contractId={data._id}
-                                                            currentUserId={ currenteUserId }
-                                                            signId={s._id} /> : <></>
+                                                            currentUserId={currenteUserId}
+                                                            signId={s._id}
+                                                            setSignersList={setSignersList}
+                                                            client={client}
+                                                        /> : <></>
                                                 }
                                                 {
                                                     allowEdit ? <Box fontSize="14px" cursor='pointer'>
@@ -526,7 +558,7 @@ export default function Contract({ token, data, querySigner, initialClauseOrder,
                     }
                 </Grid>
             </Box>
-        </Layout >
+        </Layout>
     )
 }
 
