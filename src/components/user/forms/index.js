@@ -143,6 +143,7 @@ export default function UserForm({ toast, formValues, setFormValues, formRef, me
                         delete body.address._id
                         delete body.phone.__typename
                         delete body.phone._id
+                        delete body.wallet
                         await updateUser({
                             variables: {
                                 userInput: {
@@ -152,7 +153,8 @@ export default function UserForm({ toast, formValues, setFormValues, formRef, me
                         })
                     }
 
-                    onClose()
+                    if (typeof onClose == "function")
+                        onClose()
                     toast({
                         title: "Sucesso.",
                         description: `Sucesso ao salvar`,
