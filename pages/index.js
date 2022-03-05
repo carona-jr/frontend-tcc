@@ -33,8 +33,9 @@ export default function Home() {
             <Box bgColor="#fff">
                 <Navbar />
                 <Box id="home-content" bgColor="#000">
-                    <Box pos="relative">
+                    <Box id="image-container" pos="relative">
                         <Box
+                            id="text-container"
                             w={["auto", "auto", "400px"]}
                             pos="absolute"
                             left={["0", "0", "55%"]}
@@ -48,7 +49,7 @@ export default function Home() {
                             </Text>
                             <Button colorScheme="whatsapp" fontSize={["1rem", "1rem", "2.5rem"]} p={["2", "2", "8"]} onClick={() => router.push('/signup')}>Experimente</Button>
                         </Box>
-                        <Image src={principalImage} alt="homem segurando pasta" />
+                        <Image id="image" src="https://carona.blob.core.windows.net/geral/principal_100.jpg" width="auto" height="auto" layout="responsive" objectFit="cover" alt="homem segurando pasta" />
                         <Box className='gradient-img'></Box>
                     </Box>
                     <Flex flexDir="column" justifyContent="center" alignItems="center" my={["0", "4", "10"]} p={["5", "8", "10"]}>
