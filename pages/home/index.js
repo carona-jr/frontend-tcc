@@ -65,6 +65,10 @@ export default function Home({ token, user, countContracts, countContractByStatu
                             <Text fontSize='0.7rem' fontWeight='600' textTransform='capitalize'>Seu e-mail</Text>
                             <Text fontSize='1rem'>{user.email.toLowerCase()}</Text>
                         </Box>
+                        <Box alignSelf='flex-start' px='3' mt='2'>
+                            <Text fontSize='0.7rem' fontWeight='600' textTransform='capitalize'>Carteira Ethereum</Text>
+                            <Text fontSize='1rem'>{user.wallet}</Text>
+                        </Box>
                     </Flex>
                 </GridItem>
                 <GridItem colSpan={[8, 12, 12, 4]} border='1px solid var(--chakra-colors-blackAlpha-100)' boxShadow='sm'>

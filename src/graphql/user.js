@@ -33,6 +33,7 @@ const ME = gql`
             active
             credit
             reservedCredit
+            wallet
         }
     }
 `
